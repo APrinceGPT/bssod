@@ -8,7 +8,7 @@ BSSOD Analyzer is a complete solution for diagnosing Windows crashes:
 
 1. **Parser Tool** (Desktop) - Extracts diagnostic data locally from memory dump files
 2. **Backend API** (FastAPI) - Processes uploads and integrates with AI
-3. **Website** (Coming Soon) - User-friendly interface for AI-powered analysis
+3. **Website** (Next.js) - Modern web interface for AI-powered analysis
 
 ## 📦 Project Structure
 
@@ -26,6 +26,14 @@ MemoryDumper/
 │   │   ├── config.py   # Configuration
 │   │   └── main.py     # FastAPI app
 │   └── tests/          # Backend tests
+├── frontend/           # Phase 3: Next.js website
+│   ├── src/
+│   │   ├── app/        # Next.js App Router pages
+│   │   ├── components/ # React components
+│   │   ├── context/    # React context
+│   │   ├── lib/        # API service layer
+│   │   └── types/      # TypeScript definitions
+│   └── package.json
 ├── docs/               # Project documentation
 │   └── feasibility_study.md
 └── .env                # Environment configuration
@@ -61,6 +69,16 @@ API endpoints:
 - `GET /api/v1/health` - Health check
 - `POST /api/v1/analyze` - Upload ZIP for AI analysis
 
+### Frontend Website (Phase 3)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:3000 in your browser.
+
 ## 🔧 Configuration
 
 Create a `.env` file in the root directory:
@@ -89,7 +107,7 @@ MAX_UPLOAD_SIZE_MB=50
 |-------|-----------|--------|-------------|
 | 1 | Parser Tool | ✅ Complete | Desktop app for local dump parsing |
 | 2 | Backend API | ✅ Complete | FastAPI with AI integration |
-| 3 | Frontend | 🔜 Planned | React/Next.js website |
+| 3 | Frontend | ✅ Complete | Next.js website with shadcn/ui |
 | 4 | Integration | 🔜 Planned | Full system testing |
 
 ## 🧪 Running Tests
@@ -145,5 +163,7 @@ BSSOD - Blue-Screen Solution Oriented Diagnostics Project
 
 ## 📚 Documentation
 
-- [Feasibility Study](docs/feasibility_study.md)
+- [Feasibility Study](docs/BSSOD_Feasibility_Study.md)
 - [Parser Tool README](parser-tool/README.md)
+- [Backend README](backend/README.md)
+- [Frontend README](frontend/README.md)
