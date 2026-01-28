@@ -1,0 +1,81 @@
+# BSSOD - Blue-Screen Solution Oriented Diagnostics
+# .gitignore
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ===== Virtual Environments =====
+venv/
+ENV/
+env/
+.venv/
+.env.local
+
+# ===== Environment Variables =====
+.env
+!.env.example
+
+# ===== IDE / Editors =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ===== Memory Dump Files (Large Binary Files) =====
+*.DMP
+*.dmp
+MEMORY.DMP
+MEMORY*.DMP
+
+# ===== Build Artifacts =====
+*.exe
+*.dll
+*.spec
+parser-tool/dist/
+parser-tool/build/
+backend/dist/
+backend/build/
+
+# ===== Testing =====
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== OS Files =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Temporary Files =====
+*.tmp
+*.temp
+*.bak

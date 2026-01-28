@@ -1,0 +1,12 @@
+# BSOD Parser Tool Dependencies
+
+# GUI
+customtkinter==5.2.2
+
+# Packaging (development only)
+pyinstaller==6.11.1
+
+# Testing (development only)
+pytest==8.3.4
+
+# Note: Memory dump parsing uses Python's built-in struct module (no external dependencies)
