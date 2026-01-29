@@ -8,7 +8,16 @@ BSSOD Analyzer is a complete solution for diagnosing Windows crashes:
 
 1. **Parser Tool** (Desktop) - Extracts diagnostic data locally from memory dump files
 2. **Backend API** (FastAPI) - Processes uploads and integrates with AI
-3. **Website** (Next.js) - Modern web interface for AI-powered analysis
+3. **Website** (Next.js) - Modern web interface with **structured AI analysis**
+
+### ✨ AI-Powered Features
+
+- **Severity Classification** - Crashes rated critical/high/medium/low with color-coded badges
+- **Confidence Scoring** - AI indicates certainty level (0-100%) with visual meter
+- **Executive Summaries** - Non-technical 1-2 sentence explanations
+- **Root Cause Analysis** - Detailed breakdown with affected component identification
+- **Prioritized Fix Steps** - Numbered recommendations with priority levels
+- **Prevention Tips** - Actionable advice to prevent future crashes
 
 ## 📦 Project Structure
 
@@ -110,6 +119,7 @@ MAX_UPLOAD_SIZE_MB=50
 | 3 | Frontend | ✅ Complete | Next.js website with shadcn/ui |
 | 4 | Integration | ✅ Complete | Full system integration |
 | 5 | Enhancements | ✅ Complete | UX/DX improvements |
+| 6 | AI Intelligence | 🔄 In Progress | Advanced AI capabilities |
 
 ### Enhancement Progress
 
@@ -120,7 +130,15 @@ MAX_UPLOAD_SIZE_MB=50
 | Phase 3 | Polish & Accessibility | ✅ Complete |
 | Phase 4 | Quality & Testing | ✅ Complete |
 
-See [Enhancement Assessment](docs/enhancement_assessment.md) for details.
+### AI Enhancement Progress
+
+| Phase | Focus Area | Status |
+|-------|------------|--------|
+| AI-1 | Structured Intelligence | ✅ Complete |
+| AI-2 | Smart Prompting | 🔲 Planned |
+| AI-3 | Interactive Chat | 🔲 Planned |
+
+See [Enhancement Assessment](docs/enhancement_assessment.md) and [AI Enhancement Assessment](docs/ai_enhancement_assessment.md) for details.
 
 ## 🚀 Running the Full Stack
 
@@ -202,6 +220,7 @@ BSSOD - Blue-Screen Solution Oriented Diagnostics Project
 
 - [Feasibility Study](docs/BSSOD_Feasibility_Study.md)
 - [Enhancement Assessment](docs/enhancement_assessment.md)
+- [AI Enhancement Assessment](docs/ai_enhancement_assessment.md)
 - [Parser Tool README](parser-tool/README.md)
 - [Backend README](backend/README.md)
 - [Frontend README](frontend/README.md)
