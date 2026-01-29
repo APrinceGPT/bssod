@@ -28,6 +28,7 @@ class ErrorCode(str, Enum):
     AI_TIMEOUT = "AI_TIMEOUT"
     AI_UNAVAILABLE = "AI_UNAVAILABLE"
     AI_RESPONSE_ERROR = "AI_RESPONSE_ERROR"
+    AI_JSON_PARSE_ERROR = "AI_JSON_PARSE_ERROR"
     
     # Server errors (500)
     INTERNAL_ERROR = "INTERNAL_ERROR"
@@ -160,6 +161,22 @@ def ai_service_error(error: str) -> APIError:
         message=message,
         status_code=500,
         details=str(error)
+    )
+
+
+def ai_json_parse_error(error: str, raw_response: str = None) -> APIError:
+    """Create error for AI JSON parse failure."""
+    details = str(error)
+    if raw_response:
+        # Include truncated raw response for debugging
+        truncated = raw_response[:500] + "..." if len(raw_response) > 500 else raw_response
+        details = f"{error} | Raw response: {truncated}"
+    
+    return APIError(
+        code=ErrorCode.AI_JSON_PARSE_ERROR,
+        message="AI response was not in expected format",
+        status_code=500,
+        details=details
     )
 
 

@@ -157,7 +157,7 @@ class AnalysisDataModel(BaseModel):
 # ============================================================================
 
 class AIAnalysisResult(BaseModel):
-    """AI analysis result - raw text from Claude."""
+    """AI analysis result - raw text from Claude (legacy, kept for reference)."""
     analysis: str = Field(..., description="Full AI analysis text")
     model: Optional[str] = Field(None, description="Model used for analysis")
     tokens_used: Optional[int] = Field(None, description="Total tokens used")
@@ -165,14 +165,18 @@ class AIAnalysisResult(BaseModel):
     completion_tokens: Optional[int] = Field(None, description="Completion tokens used")
 
 
+# Import structured analysis models for the new response
+from .structured_analysis import StructuredAIAnalysisResult, StructuredAnalysis
+
+
 class AnalyzeResponse(BaseModel):
-    """Response from the /analyze endpoint."""
+    """Response from the /analyze endpoint with structured AI analysis."""
     success: bool
     message: str
     dump_file: Optional[str] = None
     bugcheck_code: Optional[str] = None
     bugcheck_name: Optional[str] = None
-    ai_analysis: Optional[AIAnalysisResult] = None
+    ai_analysis: Optional[StructuredAIAnalysisResult] = None
 
 
 class ErrorResponse(BaseModel):

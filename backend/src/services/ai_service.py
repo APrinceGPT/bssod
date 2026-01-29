@@ -4,16 +4,30 @@ AI Service Module
 Handles communication with the AI API (Claude 4 Sonnet via Trend Micro).
 """
 
+import json
+import re
 import httpx
 
 from ..config import get_settings
 from ..models.schemas import AnalysisDataModel, AIAnalysisResult
+from ..models.structured_analysis import (
+    StructuredAnalysis,
+    StructuredAIAnalysisResult,
+    AIAnalysisError as StructuredAIError
+)
 from .prompt_engineering import format_analysis_prompt, get_system_prompt
 
 
 class AIServiceError(Exception):
     """Raised when AI service encounters an error."""
     pass
+
+
+class JSONParseError(AIServiceError):
+    """Raised when AI response is not valid JSON."""
+    def __init__(self, message: str, raw_response: str = None):
+        super().__init__(message)
+        self.raw_response = raw_response
 
 
 class AIService:
@@ -40,7 +54,7 @@ class AIService:
         self.model = model
         self.timeout = timeout
     
-    async def analyze(self, data: AnalysisDataModel) -> AIAnalysisResult:
+    async def analyze(self, data: AnalysisDataModel) -> StructuredAIAnalysisResult:
         """
         Analyze crash dump data using the AI.
         
@@ -48,10 +62,11 @@ class AIService:
             data: Parsed analysis data from memory dump
         
         Returns:
-            AIAnalysisResult with the analysis
+            StructuredAIAnalysisResult with parsed JSON analysis
         
         Raises:
             AIServiceError: If the API call fails
+            JSONParseError: If the response is not valid JSON
         """
         # Format the prompt
         user_prompt = format_analysis_prompt(data)
@@ -98,8 +113,8 @@ class AIService:
         except httpx.RequestError as e:
             raise AIServiceError(f"Failed to connect to AI API: {e}")
     
-    def _parse_response(self, result: dict) -> AIAnalysisResult:
-        """Parse the API response into an AIAnalysisResult."""
+    def _parse_response(self, result: dict) -> StructuredAIAnalysisResult:
+        """Parse the API response into a StructuredAIAnalysisResult with JSON parsing."""
         try:
             choices = result.get("choices", [])
             if not choices:
@@ -114,8 +129,11 @@ class AIService:
             # Extract usage information
             usage = result.get("usage", {})
             
-            return AIAnalysisResult(
-                analysis=content,
+            # Parse the JSON response from AI
+            structured_analysis = self._parse_json_response(content)
+            
+            return StructuredAIAnalysisResult(
+                structured_analysis=structured_analysis,
                 model=result.get("model", self.model),
                 tokens_used=usage.get("total_tokens"),
                 prompt_tokens=usage.get("prompt_tokens"),
@@ -124,6 +142,54 @@ class AIService:
             
         except KeyError as e:
             raise AIServiceError(f"Unexpected API response format: missing {e}")
+    
+    def _parse_json_response(self, content: str) -> StructuredAnalysis:
+        """
+        Parse the AI response content as JSON into a StructuredAnalysis.
+        
+        Args:
+            content: Raw response content from the AI
+        
+        Returns:
+            Parsed StructuredAnalysis object
+        
+        Raises:
+            JSONParseError: If the response is not valid JSON or doesn't match schema
+        """
+        # Clean up the content - remove any markdown code blocks if present
+        cleaned_content = content.strip()
+        
+        # Remove markdown code blocks if the AI wrapped it
+        if cleaned_content.startswith("```"):
+            # Find the end of the opening fence
+            first_newline = cleaned_content.find("\n")
+            if first_newline != -1:
+                cleaned_content = cleaned_content[first_newline + 1:]
+            # Remove closing fence
+            if cleaned_content.endswith("```"):
+                cleaned_content = cleaned_content[:-3].strip()
+        
+        # Try to extract JSON from content if it's mixed with text
+        json_match = re.search(r'\{[\s\S]*\}', cleaned_content)
+        if json_match:
+            cleaned_content = json_match.group()
+        
+        try:
+            parsed_json = json.loads(cleaned_content)
+        except json.JSONDecodeError as e:
+            raise JSONParseError(
+                f"AI response is not valid JSON: {e}",
+                raw_response=content
+            )
+        
+        # Validate and parse into Pydantic model
+        try:
+            return StructuredAnalysis.model_validate(parsed_json)
+        except Exception as e:
+            raise JSONParseError(
+                f"AI response doesn't match expected schema: {e}",
+                raw_response=content
+            )
     
     def _parse_error(self, response: httpx.Response) -> str:
         """Parse error details from a failed response."""

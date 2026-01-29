@@ -141,8 +141,67 @@ export interface Metadata {
 // API Response Types
 // ============================================================================
 
+/**
+ * Legacy AI analysis result (raw text)
+ * @deprecated Use StructuredAIAnalysisResult instead
+ */
 export interface AIAnalysisResult {
   analysis: string;
+  model?: string;
+  tokens_used?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+}
+
+// ============================================================================
+// Structured AI Analysis Types (Phase AI-1)
+// ============================================================================
+
+/**
+ * Root cause analysis of the crash.
+ */
+export interface RootCauseAnalysis {
+  title: string;
+  explanation: string;
+  affected_component?: string;
+  technical_details?: string;
+}
+
+/**
+ * A single fix step recommendation.
+ */
+export interface FixStep {
+  step: number;
+  priority: "high" | "medium" | "low";
+  action: string;
+  details: string;
+}
+
+/**
+ * Severity levels for crash analysis.
+ */
+export type SeverityLevel = "critical" | "high" | "medium" | "low";
+
+/**
+ * Complete structured AI analysis response.
+ * This is the parsed JSON structure from the AI.
+ */
+export interface StructuredAnalysis {
+  severity: SeverityLevel;
+  confidence: number;
+  executive_summary: string;
+  root_cause: RootCauseAnalysis;
+  fix_steps: FixStep[];
+  prevention_tips: string[];
+  additional_notes?: string;
+  related_bugchecks?: string[];
+}
+
+/**
+ * AI analysis result with structured data for rich UI rendering.
+ */
+export interface StructuredAIAnalysisResult {
+  structured_analysis: StructuredAnalysis;
   model?: string;
   tokens_used?: number;
   prompt_tokens?: number;
@@ -155,7 +214,7 @@ export interface AnalyzeResponse {
   dump_file?: string;
   bugcheck_code?: string;
   bugcheck_name?: string;
-  ai_analysis?: AIAnalysisResult;
+  ai_analysis?: StructuredAIAnalysisResult;
 }
 
 export interface ErrorResponse {

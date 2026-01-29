@@ -12,7 +12,9 @@ import pytest
 
 from src.services.zip_validator import ZipValidator, ZipValidationError, create_validator
 from src.services.prompt_engineering import format_analysis_prompt, get_system_prompt
+from src.services.ai_service import AIService, JSONParseError
 from src.models.schemas import AnalysisDataModel
+from src.models.structured_analysis import StructuredAnalysis
 
 
 # Sample valid analysis data (matching actual parser output structure)
@@ -213,6 +215,159 @@ class TestSchemas:
         model = AnalysisDataModel(**minimal_data)
         assert model.success is True
         assert model.system_info is None
+
+
+class TestStructuredAnalysis:
+    """Tests for structured AI analysis JSON parsing."""
+    
+    # Sample valid structured analysis response
+    VALID_STRUCTURED_RESPONSE = {
+        "severity": "high",
+        "confidence": 85,
+        "executive_summary": "A driver conflict caused the system to crash due to memory corruption.",
+        "root_cause": {
+            "title": "Memory Corruption by Third-Party Driver",
+            "explanation": "The crash was caused by a third-party driver attempting to access protected memory regions.",
+            "affected_component": "problematic.sys",
+            "technical_details": "MEMORY_MANAGEMENT (0x1A) indicates the memory manager detected an issue."
+        },
+        "fix_steps": [
+            {
+                "step": 1,
+                "priority": "high",
+                "action": "Update or remove problematic driver",
+                "details": "Check Device Manager for yellow warning icons and update the driver."
+            },
+            {
+                "step": 2,
+                "priority": "medium",
+                "action": "Run Windows Memory Diagnostic",
+                "details": "Open Start menu, search for Windows Memory Diagnostic, and run a full test."
+            }
+        ],
+        "prevention_tips": [
+            "Keep all drivers updated to the latest versions",
+            "Use Windows Update to automatically get driver updates"
+        ],
+        "additional_notes": "If the issue persists, consider a clean Windows installation.",
+        "related_bugchecks": ["0x50", "0xD1"]
+    }
+    
+    def test_valid_structured_analysis_parsing(self):
+        """Test parsing a valid structured analysis response."""
+        analysis = StructuredAnalysis.model_validate(self.VALID_STRUCTURED_RESPONSE)
+        
+        assert analysis.severity == "high"
+        assert analysis.confidence == 85
+        assert "driver conflict" in analysis.executive_summary.lower()
+        assert analysis.root_cause.title == "Memory Corruption by Third-Party Driver"
+        assert analysis.root_cause.affected_component == "problematic.sys"
+        assert len(analysis.fix_steps) == 2
+        assert analysis.fix_steps[0].priority == "high"
+        assert len(analysis.prevention_tips) == 2
+        assert analysis.additional_notes is not None
+        assert "0x50" in analysis.related_bugchecks
+    
+    def test_structured_analysis_minimal(self):
+        """Test parsing with only required fields."""
+        minimal_response = {
+            "severity": "medium",
+            "confidence": 70,
+            "executive_summary": "System crash occurred.",
+            "root_cause": {
+                "title": "Unknown Issue",
+                "explanation": "Unable to determine specific cause."
+            },
+            "fix_steps": [
+                {
+                    "step": 1,
+                    "priority": "medium",
+                    "action": "Restart computer",
+                    "details": "Restart and monitor for recurrence."
+                }
+            ],
+            "prevention_tips": ["Keep Windows updated"]
+        }
+        
+        analysis = StructuredAnalysis.model_validate(minimal_response)
+        
+        assert analysis.severity == "medium"
+        assert analysis.confidence == 70
+        assert analysis.root_cause.affected_component is None
+        assert analysis.additional_notes is None
+        assert analysis.related_bugchecks is None
+    
+    def test_ai_service_json_extraction(self):
+        """Test JSON extraction from AI response content."""
+        ai_service = AIService(
+            base_url="http://test",
+            api_key="test",
+            model="test"
+        )
+        
+        # Test with clean JSON
+        clean_json = json.dumps(self.VALID_STRUCTURED_RESPONSE)
+        result = ai_service._parse_json_response(clean_json)
+        assert result.severity == "high"
+        
+        # Test with markdown code blocks
+        wrapped_json = f"```json\n{clean_json}\n```"
+        result = ai_service._parse_json_response(wrapped_json)
+        assert result.severity == "high"
+        
+        # Test with leading text
+        messy_response = f"Here is the analysis:\n\n{clean_json}"
+        result = ai_service._parse_json_response(messy_response)
+        assert result.severity == "high"
+    
+    def test_ai_service_invalid_json_error(self):
+        """Test JSONParseError is raised for invalid JSON."""
+        ai_service = AIService(
+            base_url="http://test",
+            api_key="test",
+            model="test"
+        )
+        
+        with pytest.raises(JSONParseError, match="not valid JSON"):
+            ai_service._parse_json_response("This is not JSON at all")
+    
+    def test_ai_service_schema_mismatch_error(self):
+        """Test JSONParseError is raised when JSON doesn't match schema."""
+        ai_service = AIService(
+            base_url="http://test",
+            api_key="test",
+            model="test"
+        )
+        
+        invalid_structure = json.dumps({
+            "severity": "high",
+            # Missing required fields
+        })
+        
+        with pytest.raises(JSONParseError, match="doesn't match expected schema"):
+            ai_service._parse_json_response(invalid_structure)
+    
+    def test_confidence_bounds(self):
+        """Test confidence must be between 0 and 100."""
+        valid_data = self.VALID_STRUCTURED_RESPONSE.copy()
+        
+        # Test valid bounds
+        valid_data["confidence"] = 0
+        analysis = StructuredAnalysis.model_validate(valid_data)
+        assert analysis.confidence == 0
+        
+        valid_data["confidence"] = 100
+        analysis = StructuredAnalysis.model_validate(valid_data)
+        assert analysis.confidence == 100
+        
+        # Test invalid bounds
+        with pytest.raises(Exception):  # Pydantic validation error
+            valid_data["confidence"] = -1
+            StructuredAnalysis.model_validate(valid_data)
+        
+        with pytest.raises(Exception):  # Pydantic validation error
+            valid_data["confidence"] = 101
+            StructuredAnalysis.model_validate(valid_data)
 
 
 if __name__ == "__main__":

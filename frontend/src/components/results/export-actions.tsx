@@ -116,13 +116,50 @@ function formatResultAsText(result: AnalyzeResponse): string {
     lines.push(`Bugcheck Name: ${result.bugcheck_name}`);
   }
 
-  if (result.ai_analysis) {
+  if (result.ai_analysis?.structured_analysis) {
+    const data = result.ai_analysis.structured_analysis;
+    
     lines.push("");
     lines.push("-".repeat(50));
     lines.push("AI Analysis:");
     lines.push("-".repeat(50));
     lines.push("");
-    lines.push(result.ai_analysis.analysis);
+    
+    lines.push(`Severity: ${data.severity.toUpperCase()}`);
+    lines.push(`Confidence: ${data.confidence}%`);
+    lines.push("");
+    
+    lines.push("Summary:");
+    lines.push(data.executive_summary);
+    lines.push("");
+    
+    lines.push("Root Cause:");
+    lines.push(`  ${data.root_cause.title}`);
+    lines.push(`  ${data.root_cause.explanation}`);
+    if (data.root_cause.affected_component) {
+      lines.push(`  Affected Component: ${data.root_cause.affected_component}`);
+    }
+    lines.push("");
+    
+    lines.push("Fix Steps:");
+    data.fix_steps.forEach((step) => {
+      lines.push(`  ${step.step}. [${step.priority.toUpperCase()}] ${step.action}`);
+      lines.push(`     ${step.details}`);
+    });
+    lines.push("");
+    
+    if (data.prevention_tips?.length) {
+      lines.push("Prevention Tips:");
+      data.prevention_tips.forEach((tip, i) => {
+        lines.push(`  ${i + 1}. ${tip}`);
+      });
+      lines.push("");
+    }
+    
+    if (data.additional_notes) {
+      lines.push("Additional Notes:");
+      lines.push(data.additional_notes);
+    }
   }
 
   return lines.join("\n");
@@ -148,16 +185,79 @@ function formatResultAsMarkdown(result: AnalyzeResponse): string {
     lines.push(`- **Bugcheck Name:** ${result.bugcheck_name}`);
   }
 
-  if (result.ai_analysis) {
+  if (result.ai_analysis?.structured_analysis) {
+    const data = result.ai_analysis.structured_analysis;
+    
     lines.push("");
     lines.push("---");
     lines.push("");
     lines.push("## AI Analysis");
     lines.push("");
-    lines.push(result.ai_analysis.analysis);
+    
+    lines.push(`| Severity | Confidence |`);
+    lines.push(`| --- | --- |`);
+    lines.push(`| **${data.severity.toUpperCase()}** | ${data.confidence}% |`);
+    lines.push("");
+    
+    lines.push("### Summary");
+    lines.push("");
+    lines.push(data.executive_summary);
+    lines.push("");
+    
+    lines.push("### Root Cause");
+    lines.push("");
+    lines.push(`**${data.root_cause.title}**`);
+    lines.push("");
+    lines.push(data.root_cause.explanation);
+    if (data.root_cause.affected_component) {
+      lines.push("");
+      lines.push(`> **Affected Component:** ${data.root_cause.affected_component}`);
+    }
+    if (data.root_cause.technical_details) {
+      lines.push("");
+      lines.push("<details>");
+      lines.push("<summary>Technical Details</summary>");
+      lines.push("");
+      lines.push("```");
+      lines.push(data.root_cause.technical_details);
+      lines.push("```");
+      lines.push("</details>");
+    }
+    lines.push("");
+    
+    lines.push("### Fix Steps");
+    lines.push("");
+    data.fix_steps.forEach((step) => {
+      const priorityEmoji = step.priority === "high" ? "🔴" : step.priority === "medium" ? "🟡" : "🟢";
+      lines.push(`${step.step}. ${priorityEmoji} **${step.action}** (${step.priority})`);
+      lines.push(`   - ${step.details}`);
+    });
+    lines.push("");
+    
+    if (data.prevention_tips?.length) {
+      lines.push("### Prevention Tips");
+      lines.push("");
+      data.prevention_tips.forEach((tip) => {
+        lines.push(`- 💡 ${tip}`);
+      });
+      lines.push("");
+    }
+    
+    if (data.additional_notes) {
+      lines.push("### Additional Notes");
+      lines.push("");
+      lines.push(`> ${data.additional_notes}`);
+      lines.push("");
+    }
+    
+    if (data.related_bugchecks?.length) {
+      lines.push("### Related Bugchecks");
+      lines.push("");
+      lines.push(data.related_bugchecks.map((code) => `\`${code}\``).join(", "));
+      lines.push("");
+    }
     
     if (result.ai_analysis.model) {
-      lines.push("");
       lines.push("---");
       lines.push("");
       lines.push(`*Analysis performed by ${result.ai_analysis.model}*`);

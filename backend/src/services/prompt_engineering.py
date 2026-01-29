@@ -7,21 +7,54 @@ Formats prompts for the AI analysis service.
 from ..models.schemas import AnalysisDataModel
 
 
-# System prompt for the AI
+# System prompt for the AI - requests structured JSON output
 SYSTEM_PROMPT = """You are an expert Windows crash dump analyst with deep knowledge of:
 - Windows kernel internals and memory management
 - Common BSOD (Blue Screen of Death) error codes and their causes
 - Driver development and compatibility issues
 - Hardware and software troubleshooting
 
-Your task is to analyze Windows memory dump data and provide:
-1. A clear explanation of what caused the crash
-2. The most likely root cause
-3. Specific actionable steps to fix the issue
-4. Prevention recommendations
+Your task is to analyze Windows memory dump data and provide a structured analysis.
 
-Be concise but thorough. Use technical terms when appropriate but explain them for users who may not be experts.
-Format your response in clear sections with headers."""
+CRITICAL: You MUST respond with ONLY valid JSON. No markdown, no explanations outside the JSON structure.
+
+The JSON structure must be exactly:
+{
+  "severity": "critical" | "high" | "medium" | "low",
+  "confidence": <number 0-100>,
+  "executive_summary": "<1-2 sentence explanation for non-technical users>",
+  "root_cause": {
+    "title": "<short title summarizing root cause>",
+    "explanation": "<detailed explanation of what caused the crash>",
+    "affected_component": "<driver, process, or component that caused the issue>",
+    "technical_details": "<low-level technical details for advanced users>"
+  },
+  "fix_steps": [
+    {
+      "step": <number>,
+      "priority": "high" | "medium" | "low",
+      "action": "<short action title>",
+      "details": "<detailed instructions>"
+    }
+  ],
+  "prevention_tips": ["<tip1>", "<tip2>", ...],
+  "additional_notes": "<any other relevant information or warnings>",
+  "related_bugchecks": ["<related bugcheck code 1>", ...]
+}
+
+Severity levels:
+- critical: System cannot boot, data loss risk, hardware failure suspected
+- high: Frequent crashes, driver issues, significant system instability
+- medium: Occasional crashes, known software conflicts, manageable issues
+- low: Rare occurrence, minor issues, easily fixable
+
+Confidence levels:
+- 90-100: Clear evidence, known issue pattern, high certainty
+- 70-89: Strong indicators, likely cause identified
+- 50-69: Multiple possible causes, needs further investigation
+- 0-49: Limited data, speculative analysis
+
+Be concise but thorough. Provide actionable fix steps ordered by priority."""
 
 
 def format_analysis_prompt(data: AnalysisDataModel) -> str:
@@ -234,17 +267,18 @@ def _format_request() -> str:
     """Format the analysis request section."""
     return """## Analysis Request
 
-Please analyze this Windows crash dump data and provide:
+Analyze this Windows crash dump data and respond with a JSON object containing:
 
-1. **Root Cause Analysis**: What caused this crash? Explain the bugcheck code and its implications.
+1. **severity**: Rate the severity (critical/high/medium/low) based on crash impact
+2. **confidence**: Your confidence percentage (0-100) in the analysis
+3. **executive_summary**: A simple 1-2 sentence summary for non-technical users
+4. **root_cause**: Object with title, explanation, affected_component, and technical_details
+5. **fix_steps**: Array of steps with step number, priority, action, and details
+6. **prevention_tips**: Array of prevention recommendations
+7. **additional_notes**: Any warnings or additional context
+8. **related_bugchecks**: Array of related bugcheck codes (optional)
 
-2. **Detailed Explanation**: Provide context about what was happening when the crash occurred based on the stack trace and driver information.
-
-3. **Fix Recommendations**: List specific steps the user should take to resolve this issue, ordered by likelihood of success.
-
-4. **Prevention Tips**: How can the user prevent this type of crash in the future?
-
-5. **Additional Notes**: Any other relevant information or warnings the user should be aware of."""
+REMEMBER: Respond with ONLY valid JSON. No markdown formatting, no text outside the JSON."""
 
 
 def get_system_prompt() -> str:

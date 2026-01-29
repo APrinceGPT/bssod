@@ -16,9 +16,10 @@ from ..models.error_codes import (
     file_read_error,
     zip_validation_error,
     ai_service_error,
+    ai_json_parse_error,
 )
 from ..services.zip_validator import create_validator, ZipValidationError
-from ..services.ai_service import create_ai_service, AIServiceError
+from ..services.ai_service import create_ai_service, AIServiceError, JSONParseError
 from ..logging_config import Loggers, log_error, log_ai_request, log_ai_response
 from ..middleware import get_request_id
 
@@ -148,6 +149,13 @@ async def analyze_dump(
     try:
         ai_result = await ai_service.analyze(analysis_data)
         log_ai_response(logger, request_id, ai_result.tokens_used)
+    except JSONParseError as e:
+        error = ai_json_parse_error(str(e), e.raw_response)
+        log_error(logger, request_id, error.code.value, error.message, error.details)
+        return JSONResponse(
+            status_code=error.status_code,
+            content={**error.to_dict(), "request_id": request_id}
+        )
     except AIServiceError as e:
         error = ai_service_error(str(e))
         log_error(logger, request_id, error.code.value, error.message, error.details)
