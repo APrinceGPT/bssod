@@ -4,7 +4,7 @@
 **Assessor:** GitHub Copilot (Claude Opus 4.5)  
 **Focus:** Maximizing AI Capabilities for BSOD Analysis  
 **Scope:** Backend AI service, prompt engineering, frontend AI integration  
-**Last Updated:** Phase AI-1 Completed
+**Last Updated:** Phase AI-2 Completed
 
 ---
 
@@ -12,16 +12,17 @@
 
 The BSSOD project currently uses AI for **single-pass crash dump analysis**. This assessment identifies opportunities to fully utilize AI capabilities, transforming the project from a basic AI-assisted tool into an **intelligent diagnostic system** that significantly outperforms traditional hardcoded analysis.
 
-### Current State *(After Phase AI-1)*
+### Current State *(After Phase AI-2)*
 - **Structured analysis**: AI returns JSON for rich UI rendering ✅
 - **Confidence indicators**: Each analysis includes confidence scores ✅
 - **Severity classification**: Crashes rated critical/high/medium/low ✅
 - **Executive summaries**: Non-technical 1-2 sentence explanations ✅
 - **Rich UI components**: Severity badges, fix steps, prevention tips ✅
+- **Smart prompting**: Category-specific prompts for 6 crash types ✅
+- **Dynamic analysis focus**: Driver, Memory, Hardware, System, Video, Storage ✅
 
 ### Remaining Vision
 - **Multi-turn diagnostic conversation**: Users can ask follow-up questions
-- **Dynamic prompt optimization**: Prompts tailored to crash type
 - **Driver knowledge base**: AI references known problematic drivers
 
 ---
@@ -31,7 +32,7 @@ The BSSOD project currently uses AI for **single-pass crash dump analysis**. Thi
 | Phase | Name | Status | Description |
 |-------|------|--------|-------------|
 | AI-1 | Structured Intelligence | ✅ **Completed** | JSON responses, rich UI, confidence meters |
-| AI-2 | Smart Prompting | 🔲 Planned | Context-aware dynamic prompts |
+| AI-2 | Smart Prompting | ✅ **Completed** | Category-specific dynamic prompts |
 | AI-3 | Interactive Chat | 🔲 Planned | Follow-up question capability |
 
 ---
@@ -125,31 +126,38 @@ Frontend:
 
 ---
 
-### 3. Dynamic Prompt Engineering
+### 3. Dynamic Prompt Engineering ✅ COMPLETED
 **Priority:** Medium  
 **Implementation Complexity:** Low  
-**Impact:** Medium
+**Impact:** Medium  
+**Status:** Implemented in Phase AI-2
 
-**Current Limitation:**
-- Same system prompt for all crash types
-- Generic analysis request regardless of bugcheck category
+**What Was Implemented:**
+- Created `BugcheckCategory` enum with 7 categories: DRIVER, MEMORY, HARDWARE, SYSTEM, VIDEO, STORAGE, UNKNOWN
+- Mapped 40+ bugcheck codes to appropriate categories
+- Each category has specialized:
+  - Focus areas (4-5 per category)
+  - Key questions for AI to answer
+  - Common fixes to prioritize
+- Dynamic system prompt selection based on detected category
+- Category-specific analysis request in user prompt
 
-**Proposed Enhancement:**
-- Create specialized prompts for different bugcheck categories:
-  - Driver-related crashes (IRQL, DRIVER_*)
-  - Memory-related crashes (PAGE_FAULT, MEMORY_MANAGEMENT)
-  - Hardware-related crashes (WHEA, MACHINE_CHECK)
-  - System/process crashes (CRITICAL_PROCESS, KERNEL_*)
+**Categories & Mapping:**
+| Category | Example Bugchecks | Focus |
+|----------|-------------------|-------|
+| DRIVER | IRQL_NOT_LESS_OR_EQUAL, DRIVER_IRQL_NOT_LESS_OR_EQUAL | Driver identification, version, compatibility |
+| MEMORY | MEMORY_MANAGEMENT, PAGE_FAULT_IN_NONPAGED_AREA | RAM diagnostics, page file, memory pressure |
+| HARDWARE | WHEA_UNCORRECTABLE_ERROR, CLOCK_WATCHDOG_TIMEOUT | Hardware diagnostics, BIOS, thermal issues |
+| SYSTEM | KERNEL_SECURITY_CHECK_FAILURE, CRITICAL_OBJECT_TERMINATION | System integrity, security, file corruption |
+| VIDEO | VIDEO_TDR_FAILURE, VIDEO_SCHEDULER_INTERNAL_ERROR | GPU drivers, TDR timeout, overclocking |
+| STORAGE | NTFS_FILE_SYSTEM, UNMOUNTABLE_BOOT_VOLUME | Disk health, file system, storage drivers |
+| UNKNOWN | Any unmapped code | General analysis |
 
-**Prompt Specialization Examples:**
-- For driver crashes: Focus on driver identification, version checking, known issues
-- For memory crashes: Focus on RAM diagnostics, page file settings, memory pressure
-- For hardware crashes: Focus on hardware diagnostics, BIOS updates, thermal issues
-
-**Agentic AI Capability:** ✅ I can implement this fully
-- Create prompt templates for each category
-- Map bugcheck codes to categories
-- Select appropriate prompt at runtime
+**Files Created/Changed:**
+- `backend/src/models/bugcheck_categories.py` - Category definitions and mapping (280 lines)
+- `backend/src/models/prompt_templates.py` - Specialized prompt builders (125 lines)
+- `backend/src/services/prompt_engineering.py` - Updated for dynamic prompts
+- `backend/tests/test_backend.py` - Added 8 new tests for smart prompting
 
 ---
 

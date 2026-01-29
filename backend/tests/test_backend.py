@@ -11,10 +11,20 @@ from io import BytesIO
 import pytest
 
 from src.services.zip_validator import ZipValidator, ZipValidationError, create_validator
-from src.services.prompt_engineering import format_analysis_prompt, get_system_prompt
+from src.services.prompt_engineering import (
+    format_analysis_prompt,
+    get_system_prompt,
+    get_detected_category,
+)
 from src.services.ai_service import AIService, JSONParseError
 from src.models.schemas import AnalysisDataModel
 from src.models.structured_analysis import StructuredAnalysis
+from src.models.bugcheck_categories import (
+    BugcheckCategory,
+    get_bugcheck_category,
+    parse_bugcheck_code,
+)
+from src.models.prompt_templates import get_specialized_prompt
 
 
 # Sample valid analysis data (matching actual parser output structure)
@@ -368,6 +378,139 @@ class TestStructuredAnalysis:
         with pytest.raises(Exception):  # Pydantic validation error
             valid_data["confidence"] = 101
             StructuredAnalysis.model_validate(valid_data)
+
+
+class TestSmartPrompting:
+    """Tests for Phase AI-2: Smart Prompting (dynamic prompts based on bugcheck category)."""
+    
+    def test_bugcheck_code_parsing(self):
+        """Test parsing bugcheck codes from various formats."""
+        # Hex format
+        assert parse_bugcheck_code("0x0000001A") == 0x1A
+        assert parse_bugcheck_code("0x000000D1") == 0xD1
+        assert parse_bugcheck_code("0x00000124") == 0x124
+        
+        # Decimal format
+        assert parse_bugcheck_code("26") == 26
+        
+        # Edge cases
+        assert parse_bugcheck_code(None) is None
+        assert parse_bugcheck_code("") is None
+        assert parse_bugcheck_code("invalid") is None
+    
+    def test_category_detection_by_code(self):
+        """Test bugcheck category detection from codes."""
+        # Driver-related
+        assert get_bugcheck_category(0x0A) == BugcheckCategory.DRIVER  # IRQL_NOT_LESS_OR_EQUAL
+        assert get_bugcheck_category(0xD1) == BugcheckCategory.DRIVER  # DRIVER_IRQL_NOT_LESS_OR_EQUAL
+        
+        # Memory-related
+        assert get_bugcheck_category(0x1A) == BugcheckCategory.MEMORY  # MEMORY_MANAGEMENT
+        assert get_bugcheck_category(0x50) == BugcheckCategory.MEMORY  # PAGE_FAULT_IN_NONPAGED_AREA
+        
+        # Hardware-related
+        assert get_bugcheck_category(0x124) == BugcheckCategory.HARDWARE  # WHEA_UNCORRECTABLE_ERROR
+        assert get_bugcheck_category(0x101) == BugcheckCategory.HARDWARE  # CLOCK_WATCHDOG_TIMEOUT
+        
+        # Video-related
+        assert get_bugcheck_category(0x116) == BugcheckCategory.VIDEO  # VIDEO_TDR_FAILURE
+        
+        # System-related
+        assert get_bugcheck_category(0x139) == BugcheckCategory.SYSTEM  # KERNEL_SECURITY_CHECK_FAILURE
+        
+        # Storage-related
+        assert get_bugcheck_category(0x24) == BugcheckCategory.STORAGE  # NTFS_FILE_SYSTEM
+        
+        # Unknown
+        assert get_bugcheck_category(0x99999) == BugcheckCategory.UNKNOWN
+    
+    def test_specialized_prompts_differ_by_category(self):
+        """Test that each category has a different specialized prompt."""
+        prompts = {}
+        for category in BugcheckCategory:
+            prompt = get_specialized_prompt(category)
+            prompts[category] = prompt
+            # Each prompt should mention JSON structure
+            assert "JSON" in prompt
+            assert "severity" in prompt
+        
+        # Verify prompts are different
+        assert prompts[BugcheckCategory.DRIVER] != prompts[BugcheckCategory.MEMORY]
+        assert prompts[BugcheckCategory.HARDWARE] != prompts[BugcheckCategory.VIDEO]
+    
+    def test_specialized_prompts_contain_category_focus(self):
+        """Test that specialized prompts contain category-specific content."""
+        driver_prompt = get_specialized_prompt(BugcheckCategory.DRIVER)
+        assert "Driver" in driver_prompt
+        assert "IRQL" in driver_prompt or "driver" in driver_prompt.lower()
+        
+        memory_prompt = get_specialized_prompt(BugcheckCategory.MEMORY)
+        assert "Memory" in memory_prompt
+        assert "RAM" in memory_prompt or "page" in memory_prompt.lower()
+        
+        hardware_prompt = get_specialized_prompt(BugcheckCategory.HARDWARE)
+        assert "Hardware" in hardware_prompt
+        assert "BIOS" in hardware_prompt or "firmware" in hardware_prompt.lower()
+        
+        video_prompt = get_specialized_prompt(BugcheckCategory.VIDEO)
+        assert "Video" in video_prompt or "Display" in video_prompt
+        assert "TDR" in video_prompt or "GPU" in video_prompt or "graphics" in video_prompt.lower()
+    
+    def test_get_system_prompt_with_data(self):
+        """Test that get_system_prompt returns specialized prompt when data is provided."""
+        # Memory management crash
+        memory_data = AnalysisDataModel(**SAMPLE_ANALYSIS_DATA)  # Uses 0x1A
+        prompt = get_system_prompt(memory_data)
+        assert "Memory" in prompt
+        
+        # Create driver crash data
+        driver_data_dict = SAMPLE_ANALYSIS_DATA.copy()
+        driver_data_dict["crash_summary"] = {
+            **SAMPLE_ANALYSIS_DATA["crash_summary"],
+            "bugcheck_code": "0x000000D1",
+            "bugcheck_code_int": 0xD1,
+            "bugcheck_name": "DRIVER_IRQL_NOT_LESS_OR_EQUAL",
+        }
+        driver_data = AnalysisDataModel(**driver_data_dict)
+        driver_prompt = get_system_prompt(driver_data)
+        assert "Driver" in driver_prompt
+        
+        # Prompts should be different
+        assert prompt != driver_prompt
+    
+    def test_get_system_prompt_without_data(self):
+        """Test that get_system_prompt returns fallback when no data provided."""
+        prompt = get_system_prompt()  # No data
+        assert prompt is not None
+        assert len(prompt) > 100
+        assert "JSON" in prompt
+    
+    def test_format_analysis_prompt_includes_category(self):
+        """Test that formatted prompt includes category-specific request."""
+        # Memory crash
+        memory_data = AnalysisDataModel(**SAMPLE_ANALYSIS_DATA)
+        prompt = format_analysis_prompt(memory_data)
+        assert "Memory-Related Crash" in prompt
+        
+        # Driver crash
+        driver_data_dict = SAMPLE_ANALYSIS_DATA.copy()
+        driver_data_dict["crash_summary"] = {
+            **SAMPLE_ANALYSIS_DATA["crash_summary"],
+            "bugcheck_code": "0x0000000A",
+            "bugcheck_code_int": 0x0A,
+            "bugcheck_name": "IRQL_NOT_LESS_OR_EQUAL",
+        }
+        driver_data = AnalysisDataModel(**driver_data_dict)
+        driver_prompt = format_analysis_prompt(driver_data)
+        assert "Driver-Related Crash" in driver_prompt
+    
+    def test_get_detected_category(self):
+        """Test category detection helper function."""
+        memory_data = AnalysisDataModel(**SAMPLE_ANALYSIS_DATA)
+        category, name = get_detected_category(memory_data)
+        
+        assert category == BugcheckCategory.MEMORY
+        assert "Memory" in name
 
 
 if __name__ == "__main__":

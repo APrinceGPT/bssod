@@ -68,9 +68,9 @@ class AIService:
             AIServiceError: If the API call fails
             JSONParseError: If the response is not valid JSON
         """
-        # Format the prompt
+        # Format the prompt with category-specific guidance
         user_prompt = format_analysis_prompt(data)
-        system_prompt = get_system_prompt()
+        system_prompt = get_system_prompt(data)  # Pass data for category detection
         
         # Prepare the request
         request_body = {

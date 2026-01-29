@@ -2,59 +2,26 @@
 AI Prompt Engineering Module
 
 Formats prompts for the AI analysis service.
+Supports dynamic prompt selection based on bugcheck category.
 """
 
+from typing import Tuple
+
 from ..models.schemas import AnalysisDataModel
+from ..models.bugcheck_categories import (
+    BugcheckCategory,
+    get_bugcheck_category,
+    parse_bugcheck_code,
+    get_category_config,
+)
+from ..models.prompt_templates import (
+    get_specialized_prompt,
+    get_category_analysis_request,
+)
 
 
-# System prompt for the AI - requests structured JSON output
-SYSTEM_PROMPT = """You are an expert Windows crash dump analyst with deep knowledge of:
-- Windows kernel internals and memory management
-- Common BSOD (Blue Screen of Death) error codes and their causes
-- Driver development and compatibility issues
-- Hardware and software troubleshooting
-
-Your task is to analyze Windows memory dump data and provide a structured analysis.
-
-CRITICAL: You MUST respond with ONLY valid JSON. No markdown, no explanations outside the JSON structure.
-
-The JSON structure must be exactly:
-{
-  "severity": "critical" | "high" | "medium" | "low",
-  "confidence": <number 0-100>,
-  "executive_summary": "<1-2 sentence explanation for non-technical users>",
-  "root_cause": {
-    "title": "<short title summarizing root cause>",
-    "explanation": "<detailed explanation of what caused the crash>",
-    "affected_component": "<driver, process, or component that caused the issue>",
-    "technical_details": "<low-level technical details for advanced users>"
-  },
-  "fix_steps": [
-    {
-      "step": <number>,
-      "priority": "high" | "medium" | "low",
-      "action": "<short action title>",
-      "details": "<detailed instructions>"
-    }
-  ],
-  "prevention_tips": ["<tip1>", "<tip2>", ...],
-  "additional_notes": "<any other relevant information or warnings>",
-  "related_bugchecks": ["<related bugcheck code 1>", ...]
-}
-
-Severity levels:
-- critical: System cannot boot, data loss risk, hardware failure suspected
-- high: Frequent crashes, driver issues, significant system instability
-- medium: Occasional crashes, known software conflicts, manageable issues
-- low: Rare occurrence, minor issues, easily fixable
-
-Confidence levels:
-- 90-100: Clear evidence, known issue pattern, high certainty
-- 70-89: Strong indicators, likely cause identified
-- 50-69: Multiple possible causes, needs further investigation
-- 0-49: Limited data, speculative analysis
-
-Be concise but thorough. Provide actionable fix steps ordered by priority."""
+# Fallback system prompt for unknown categories (same as UNKNOWN category)
+FALLBACK_SYSTEM_PROMPT = get_specialized_prompt(BugcheckCategory.UNKNOWN)
 
 
 def format_analysis_prompt(data: AnalysisDataModel) -> str:
@@ -92,10 +59,42 @@ def format_analysis_prompt(data: AnalysisDataModel) -> str:
     if data.drivers:
         sections.append(_format_drivers(data))
     
-    # Analysis Request
-    sections.append(_format_request())
+    # Analysis Request - use category-specific request
+    category = _detect_category(data)
+    sections.append(get_category_analysis_request(category))
     
     return "\n".join(sections)
+
+
+def _detect_category(data: AnalysisDataModel) -> BugcheckCategory:
+    """
+    Detect the bugcheck category from analysis data.
+    
+    Args:
+        data: The parsed analysis data
+        
+    Returns:
+        BugcheckCategory for the crash
+    """
+    # Try to get bugcheck code from crash_summary first
+    bugcheck_code = None
+    
+    if data.crash_summary:
+        bugcheck_code = parse_bugcheck_code(data.crash_summary.bugcheck_code)
+        if bugcheck_code is None and data.crash_summary.bugcheck_code_int:
+            bugcheck_code = data.crash_summary.bugcheck_code_int
+    
+    # Fallback to bugcheck_analysis
+    if bugcheck_code is None and data.bugcheck_analysis:
+        if data.bugcheck_analysis.code:
+            bugcheck_code = data.bugcheck_analysis.code
+        elif data.bugcheck_analysis.code_hex:
+            bugcheck_code = parse_bugcheck_code(data.bugcheck_analysis.code_hex)
+    
+    if bugcheck_code is None:
+        return BugcheckCategory.UNKNOWN
+    
+    return get_bugcheck_category(bugcheck_code)
 
 
 def _format_system_info(data: AnalysisDataModel) -> str:
@@ -264,23 +263,43 @@ def _format_drivers(data: AnalysisDataModel) -> str:
 
 
 def _format_request() -> str:
-    """Format the analysis request section."""
-    return """## Analysis Request
-
-Analyze this Windows crash dump data and respond with a JSON object containing:
-
-1. **severity**: Rate the severity (critical/high/medium/low) based on crash impact
-2. **confidence**: Your confidence percentage (0-100) in the analysis
-3. **executive_summary**: A simple 1-2 sentence summary for non-technical users
-4. **root_cause**: Object with title, explanation, affected_component, and technical_details
-5. **fix_steps**: Array of steps with step number, priority, action, and details
-6. **prevention_tips**: Array of prevention recommendations
-7. **additional_notes**: Any warnings or additional context
-8. **related_bugchecks**: Array of related bugcheck codes (optional)
-
-REMEMBER: Respond with ONLY valid JSON. No markdown formatting, no text outside the JSON."""
+    """
+    Format the default analysis request section.
+    Used as fallback when category detection fails.
+    """
+    return get_category_analysis_request(BugcheckCategory.UNKNOWN)
 
 
-def get_system_prompt() -> str:
-    """Get the system prompt for the AI."""
-    return SYSTEM_PROMPT
+def get_system_prompt(data: AnalysisDataModel = None) -> str:
+    """
+    Get the system prompt for the AI.
+    
+    If data is provided, returns a specialized prompt based on bugcheck category.
+    Otherwise returns the fallback/unknown category prompt.
+    
+    Args:
+        data: Optional analysis data for category detection
+        
+    Returns:
+        System prompt string
+    """
+    if data is None:
+        return FALLBACK_SYSTEM_PROMPT
+    
+    category = _detect_category(data)
+    return get_specialized_prompt(category)
+
+
+def get_detected_category(data: AnalysisDataModel) -> Tuple[BugcheckCategory, str]:
+    """
+    Get the detected category and its name for logging/display.
+    
+    Args:
+        data: The parsed analysis data
+        
+    Returns:
+        Tuple of (BugcheckCategory, category display name)
+    """
+    category = _detect_category(data)
+    config = get_category_config(category)
+    return category, config.name
