@@ -51,14 +51,48 @@ export interface BugcheckAnalysis {
   severity?: string;
 }
 
+/**
+ * CPU register values from the crash context.
+ * Keys are register names (e.g., "rax", "rbx", "rsp", "rip").
+ * Values are hex string representations of register contents.
+ */
+export interface RegisterValues {
+  [registerName: string]: string | number | undefined;
+}
+
+/**
+ * Exception record from the crash dump.
+ */
+export interface ExceptionRecord {
+  code?: number;
+  code_hex?: string;
+  flags?: number;
+  address?: string;
+  parameters?: (string | number)[];
+  description?: string;
+}
+
+/**
+ * Raw stack frame information.
+ */
+export interface RawStackFrame {
+  index?: number;
+  return_address?: string;
+  stack_address?: string;
+  instruction_pointer?: string;
+  module?: string;
+  function_name?: string;
+  offset?: string;
+}
+
 export interface StackTrace {
   has_context?: boolean;
   has_exception?: boolean;
   stack_pointer?: string;
   instruction_pointer?: string;
-  registers?: Record<string, unknown>;
-  exception?: Record<string, unknown>;
-  raw_frames?: Record<string, unknown>[];
+  registers?: RegisterValues;
+  exception?: ExceptionRecord;
+  raw_frames?: RawStackFrame[];
   raw_frame_count?: number;
   note?: string;
 }

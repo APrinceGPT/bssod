@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Copy, Download, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/components/ui/sonner";
 import { AnalyzeResponse } from "@/types";
 
 interface ExportActionsProps {
@@ -18,20 +19,24 @@ export function ExportActions({ result }: ExportActionsProps) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
+      toast.success("Analysis copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
+      toast.error("Failed to copy to clipboard");
     }
   };
 
   const handleExportJSON = () => {
     const json = JSON.stringify(result, null, 2);
     downloadFile(json, "bssod-analysis.json", "application/json");
+    toast.success("JSON file downloaded successfully");
   };
 
   const handleExportMarkdown = () => {
     const markdown = formatResultAsMarkdown(result);
     downloadFile(markdown, "bssod-analysis.md", "text/markdown");
+    toast.success("Markdown file downloaded successfully");
   };
 
   return (
@@ -40,11 +45,11 @@ export function ExportActions({ result }: ExportActionsProps) {
         <CardTitle className="text-lg">Export Results</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button 
             variant="outline" 
             onClick={handleCopyToClipboard}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             {copied ? (
               <>
@@ -61,7 +66,7 @@ export function ExportActions({ result }: ExportActionsProps) {
           <Button 
             variant="outline" 
             onClick={handleExportJSON}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <Download className="h-4 w-4" />
             Export JSON
@@ -69,7 +74,7 @@ export function ExportActions({ result }: ExportActionsProps) {
           <Button 
             variant="outline" 
             onClick={handleExportMarkdown}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <Download className="h-4 w-4" />
             Export Markdown
