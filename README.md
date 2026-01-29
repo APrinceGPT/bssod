@@ -109,6 +109,18 @@ MAX_UPLOAD_SIZE_MB=50
 | 2 | Backend API | ✅ Complete | FastAPI with AI integration |
 | 3 | Frontend | ✅ Complete | Next.js website with shadcn/ui |
 | 4 | Integration | ✅ Complete | Full system integration |
+| 5 | Enhancements | 🔄 In Progress | UX/DX improvements |
+
+### Enhancement Progress
+
+| Phase | Focus Area | Status |
+|-------|------------|--------|
+| Phase 1 | Critical UX Fixes | ✅ Complete |
+| Phase 2 | Backend Robustness | ⏳ Pending |
+| Phase 3 | Polish & Accessibility | ⏳ Pending |
+| Phase 4 | Quality & Testing | ⏳ Pending |
+
+See [Enhancement Assessment](docs/enhancement_assessment.md) for details.
 
 ## 🚀 Running the Full Stack
 
@@ -189,6 +201,7 @@ BSSOD - Blue-Screen Solution Oriented Diagnostics Project
 ## 📚 Documentation
 
 - [Feasibility Study](docs/BSSOD_Feasibility_Study.md)
+- [Enhancement Assessment](docs/enhancement_assessment.md)
 - [Parser Tool README](parser-tool/README.md)
 - [Backend README](backend/README.md)
 - [Frontend README](frontend/README.md)

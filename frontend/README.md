@@ -39,6 +39,8 @@ frontend/
 │   │   └── analysis-context.tsx # React context for analysis state
 │   ├── lib/
 │   │   ├── api.ts              # API service layer
+│   │   ├── constants.ts        # Centralized configuration constants
+│   │   ├── error-messages.ts   # User-friendly error mapping
 │   │   └── utils.ts            # Utility functions
 │   └── types/
 │       └── index.ts            # TypeScript type definitions
@@ -104,9 +106,10 @@ npm run lint
 ### Upload Page (`/upload`)
 
 - Drag-and-drop file upload
-- ZIP file validation
-- Upload progress tracking
-- Error handling
+- ZIP file validation (type and size)
+- Client-side file size limit (50 MB)
+- Upload progress tracking with phased messages
+- User-friendly error handling with suggestions
 
 ### Results Page (`/results`)
 

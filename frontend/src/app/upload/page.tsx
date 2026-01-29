@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileArchive, AlertCircle, Loader2, Download } from "lucide-react";
+import { Upload, FileArchive, AlertCircle, Loader2, Download, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -10,21 +10,28 @@ import { Progress } from "@/components/ui/progress";
 import { useAnalysis } from "@/context/analysis-context";
 import { analyzeFile, ApiError } from "@/lib/api";
 import { FileDropzone } from "@/components/upload/file-dropzone";
+import { getUserFriendlyError, UserFriendlyError } from "@/lib/error-messages";
+import { UPLOAD_CONFIG, PROGRESS_MESSAGES } from "@/lib/constants";
 
 export default function UploadPage() {
   const router = useRouter();
   const { state, setUploading, setAnalyzing, setComplete, setError, setProgress, reset } = useAnalysis();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [friendlyError, setFriendlyError] = useState<UserFriendlyError | null>(null);
+  const [progressMessage, setProgressMessage] = useState<string>("");
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file);
+    setFriendlyError(null);
     reset();
   }, [reset]);
 
   const handleUpload = useCallback(async () => {
     if (!selectedFile) return;
 
+    setFriendlyError(null);
     setUploading(selectedFile.name);
+    setProgressMessage(PROGRESS_MESSAGES.UPLOADING);
 
     try {
       // Start upload with progress tracking
@@ -33,14 +40,31 @@ export default function UploadPage() {
       // Call API with progress callback
       const result = await analyzeFile(selectedFile, (progress) => {
         setProgress(progress);
+        // Update message based on progress phase
+        if (progress < 40) {
+          setProgressMessage(PROGRESS_MESSAGES.UPLOADING);
+        }
       });
+
+      // Move to validation phase
+      setProgress(45);
+      setProgressMessage(PROGRESS_MESSAGES.VALIDATING);
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       // Move to analyzing state
       setAnalyzing();
       setProgress(60);
+      setProgressMessage(PROGRESS_MESSAGES.ANALYZING);
 
-      // Short delay for UI feedback
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Simulate progress during analysis
+      await new Promise(resolve => setTimeout(resolve, 400));
+      setProgress(80);
+
+      // Preparing results
+      setProgress(95);
+      setProgressMessage(PROGRESS_MESSAGES.PREPARING);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       setProgress(100);
 
       // Complete
@@ -49,13 +73,21 @@ export default function UploadPage() {
       // Navigate to results
       router.push("/results");
     } catch (err) {
+      let errorMessage = "An unexpected error occurred";
+      let userError: UserFriendlyError;
+      
       if (err instanceof ApiError) {
-        setError(err.message);
+        errorMessage = err.message;
+        userError = getUserFriendlyError(err.message, err.statusCode);
       } else if (err instanceof Error) {
-        setError(err.message);
+        errorMessage = err.message;
+        userError = getUserFriendlyError(err.message);
       } else {
-        setError("An unexpected error occurred");
+        userError = getUserFriendlyError(errorMessage);
       }
+      
+      setFriendlyError(userError);
+      setError(errorMessage);
     }
   }, [selectedFile, setUploading, setProgress, setAnalyzing, setComplete, setError, router]);
 
@@ -112,7 +144,7 @@ export default function UploadPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   <div className="flex-1">
                     <p className="font-medium">
-                      {state.status === "uploading" ? "Uploading..." : "Analyzing with AI..."}
+                      {progressMessage || (state.status === "uploading" ? "Uploading..." : "Analyzing...")}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {state.fileName}
@@ -131,14 +163,21 @@ export default function UploadPage() {
               <div className="space-y-4">
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{state.error}</AlertDescription>
+                  <AlertTitle>{friendlyError?.title || "Error"}</AlertTitle>
+                  <AlertDescription>{friendlyError?.message || state.error}</AlertDescription>
                 </Alert>
+                {friendlyError?.suggestion && (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-muted text-sm">
+                    <Info className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">{friendlyError.suggestion}</span>
+                  </div>
+                )}
                 <Button 
                   variant="outline" 
                   onClick={() => {
                     reset();
                     setSelectedFile(null);
+                    setFriendlyError(null);
                   }}
                   className="w-full"
                 >
@@ -165,7 +204,7 @@ export default function UploadPage() {
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">2.</span>
                 <span>
-                  Maximum file size: 50 MB
+                  Maximum file size: {UPLOAD_CONFIG.MAX_FILE_SIZE_MB} MB
                 </span>
               </li>
               <li className="flex items-start gap-2">
