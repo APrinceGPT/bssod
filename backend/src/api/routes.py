@@ -4,12 +4,23 @@ API Routes
 Defines the FastAPI endpoints for the BSSOD Analyzer backend.
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Request
+from fastapi.responses import JSONResponse
 
 from ..config import get_settings
-from ..models.schemas import AnalyzeResponse, ErrorResponse, HealthResponse
+from ..models.schemas import AnalyzeResponse, HealthResponse
+from ..models.error_codes import (
+    ErrorResponseModel,
+    no_filename_error,
+    invalid_file_type_error,
+    file_read_error,
+    zip_validation_error,
+    ai_service_error,
+)
 from ..services.zip_validator import create_validator, ZipValidationError
 from ..services.ai_service import create_ai_service, AIServiceError
+from ..logging_config import Loggers, log_error, log_ai_request, log_ai_response
+from ..middleware import get_request_id
 
 
 # Create the router
@@ -22,13 +33,35 @@ router = APIRouter()
     summary="Health Check",
     description="Check if the API is running and services are available"
 )
-async def health_check():
-    """Health check endpoint."""
-    # Simple health check - don't check AI service to avoid slow responses
+async def health_check(check_ai: bool = False):
+    """
+    Health check endpoint.
+    
+    Args:
+        check_ai: If True, perform a connectivity check to the AI service.
+                  This adds latency but confirms AI service availability.
+    """
+    request_id = get_request_id()
+    logger = Loggers.api()
+    
+    ai_available = True
+    message = "All systems operational"
+    
+    # Optionally check AI service connectivity
+    if check_ai:
+        logger.info(f"[{request_id}] Health check with AI verification")
+        ai_service = create_ai_service()
+        ai_available = await ai_service.health_check()
+        if not ai_available:
+            message = "AI service is not reachable"
+            logger.warning(f"[{request_id}] AI service health check failed")
+    
     return HealthResponse(
         status="healthy",
         version="1.0.0",
-        ai_service_available=True  # Assume available, actual check on /analyze
+        message=message,
+        ai_service_available=ai_available,
+        request_id=request_id
     )
 
 
@@ -36,13 +69,14 @@ async def health_check():
     "/analyze",
     response_model=AnalyzeResponse,
     responses={
-        400: {"model": ErrorResponse, "description": "Invalid input"},
-        500: {"model": ErrorResponse, "description": "Server error"}
+        400: {"model": ErrorResponseModel, "description": "Invalid input"},
+        500: {"model": ErrorResponseModel, "description": "Server error"}
     },
     summary="Analyze Memory Dump",
     description="Upload a ZIP file from the parser tool and get AI-powered analysis"
 )
 async def analyze_dump(
+    request: Request,
     file: UploadFile = File(
         ...,
         description="ZIP file exported from the BSOD Parser Tool containing analysis.json"
@@ -55,28 +89,41 @@ async def analyze_dump(
     validates the contents, and returns AI-powered analysis.
     """
     settings = get_settings()
+    logger = Loggers.api()
+    request_id = get_request_id()
     
-    # Validate file type
+    # Validate filename
     if not file.filename:
-        raise HTTPException(
-            status_code=400,
-            detail="No filename provided"
+        error = no_filename_error()
+        log_error(logger, request_id, error.code.value, error.message)
+        return JSONResponse(
+            status_code=error.status_code,
+            content={**error.to_dict(), "request_id": request_id}
         )
     
+    # Validate file type
     if not file.filename.lower().endswith(".zip"):
-        raise HTTPException(
-            status_code=400,
-            detail="File must be a ZIP archive"
+        error = invalid_file_type_error(file.filename)
+        log_error(logger, request_id, error.code.value, error.message, error.details)
+        return JSONResponse(
+            status_code=error.status_code,
+            content={**error.to_dict(), "request_id": request_id}
         )
     
     # Read the file content
     try:
         content = await file.read()
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to read uploaded file: {e}"
+        error = file_read_error(str(e))
+        log_error(logger, request_id, error.code.value, error.message, error.details)
+        return JSONResponse(
+            status_code=error.status_code,
+            content={**error.to_dict(), "request_id": request_id}
         )
+    
+    # Log file info
+    file_size_mb = len(content) / (1024 * 1024)
+    logger.info(f"[{request_id}] Processing: {file.filename} ({file_size_mb:.2f} MB)")
     
     # Validate and extract the ZIP
     validator = create_validator(max_size_mb=settings.upload.max_size_mb)
@@ -84,28 +131,38 @@ async def analyze_dump(
     try:
         analysis_data, raw_data = validator.validate_and_extract(content)
     except ZipValidationError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
+        error = zip_validation_error(str(e))
+        log_error(logger, request_id, error.code.value, error.message)
+        return JSONResponse(
+            status_code=error.status_code,
+            content={**error.to_dict(), "request_id": request_id}
         )
+    
+    # Get bugcheck info for logging
+    bugcheck_code = _get_bugcheck_code(analysis_data)
     
     # Call the AI service
     ai_service = create_ai_service()
+    log_ai_request(logger, request_id, settings.ai.model, bugcheck_code)
     
     try:
         ai_result = await ai_service.analyze(analysis_data)
+        log_ai_response(logger, request_id, ai_result.tokens_used)
     except AIServiceError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"AI analysis failed: {e}"
+        error = ai_service_error(str(e))
+        log_error(logger, request_id, error.code.value, error.message, error.details)
+        return JSONResponse(
+            status_code=error.status_code,
+            content={**error.to_dict(), "request_id": request_id}
         )
     
     # Build the response
+    logger.info(f"[{request_id}] Analysis completed successfully")
     return AnalyzeResponse(
         success=True,
         message="Analysis completed successfully",
         dump_file=analysis_data.metadata.dump_filename or "Unknown",
-        bugcheck_code=_get_bugcheck_code(analysis_data),
+        bugcheck_code=bugcheck_code,
         bugcheck_name=_get_bugcheck_name(analysis_data),
         ai_analysis=ai_result
     )

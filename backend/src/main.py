@@ -10,26 +10,34 @@ from contextlib import asynccontextmanager
 
 from .config import get_settings
 from .api.routes import router
+from .middleware import RequestIdMiddleware
+from .logging_config import setup_logging, Loggers
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     # Startup
+    logger = Loggers.app()
     settings = get_settings()
-    print("Starting BSSOD Analyzer API v1.0.0")
-    print(f"AI Model: {settings.ai.model}")
-    print(f"Max upload size: {settings.upload.max_size_mb} MB")
+    
+    logger.info("Starting BSSOD Analyzer API v1.0.0")
+    logger.info(f"AI Model: {settings.ai.model}")
+    logger.info(f"Max upload size: {settings.upload.max_size_mb} MB")
+    logger.info(f"Debug mode: {settings.server.debug}")
     
     yield
     
     # Shutdown
-    print("Shutting down BSSOD Analyzer API")
+    logger.info("Shutting down BSSOD Analyzer API")
 
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
+    
+    # Setup logging first
+    setup_logging()
     
     app = FastAPI(
         title="BSSOD Analyzer API",
@@ -38,6 +46,9 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
     
+    # Add request ID middleware (must be before CORS)
+    app.add_middleware(RequestIdMiddleware)
+    
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
@@ -45,6 +56,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["X-Request-ID"],
     )
     
     # Include routes

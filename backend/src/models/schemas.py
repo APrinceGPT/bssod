@@ -186,4 +186,6 @@ class HealthResponse(BaseModel):
     """Health check response."""
     status: str
     version: str
+    message: Optional[str] = None
     ai_service_available: bool
+    request_id: Optional[str] = None
