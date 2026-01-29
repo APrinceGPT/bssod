@@ -108,7 +108,26 @@ MAX_UPLOAD_SIZE_MB=50
 | 1 | Parser Tool | ✅ Complete | Desktop app for local dump parsing |
 | 2 | Backend API | ✅ Complete | FastAPI with AI integration |
 | 3 | Frontend | ✅ Complete | Next.js website with shadcn/ui |
-| 4 | Integration | 🔜 Planned | Full system testing |
+| 4 | Integration | ✅ Complete | Full system integration |
+
+## 🚀 Running the Full Stack
+
+### 1. Start the Backend
+```bash
+cd backend
+pip install -r requirements.txt
+python -m uvicorn src.main:app --host 127.0.0.1 --port 8080
+```
+
+### 2. Start the Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 3. Open the App
+Navigate to http://localhost:3000 in your browser.
 
 ## 🧪 Running Tests
 
@@ -122,6 +141,12 @@ python test_kdmp.py
 ```bash
 cd backend
 python -m pytest tests/ -v
+```
+
+### Frontend Build Test
+```bash
+cd frontend
+npm run build
 ```
 
 ## 🔒 Privacy First

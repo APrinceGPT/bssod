@@ -40,7 +40,7 @@ export default function Home() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <a href={process.env.NEXT_PUBLIC_PARSER_DOWNLOAD_URL || "#"} download>
+                <a href="/downloads/BSSOD_Analyzer_Parser.exe" download="BSSOD_Analyzer_Parser.exe">
                   <Download className="mr-2 h-5 w-5" />
                   Download Parser Tool
                 </a>

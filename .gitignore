@@ -84,6 +84,9 @@ desktop.ini
 # ===== Parser Output Files =====
 parser-tool/output/*.zip
 
+# ===== Frontend Downloads (built from parser-tool) =====
+frontend/public/downloads/*.exe
+
 # ===== Node.js / Frontend =====
 node_modules/
 .next/

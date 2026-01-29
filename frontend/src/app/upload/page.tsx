@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileArchive, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, FileArchive, AlertCircle, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -128,11 +128,23 @@ export default function UploadPage() {
 
             {/* Error */}
             {state.status === "error" && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{state.error}</AlertDescription>
-              </Alert>
+              <div className="space-y-4">
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{state.error}</AlertDescription>
+                </Alert>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    reset();
+                    setSelectedFile(null);
+                  }}
+                  className="w-full"
+                >
+                  Try Again
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -142,7 +154,7 @@ export default function UploadPage() {
           <CardHeader>
             <CardTitle className="text-lg">Requirements</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">1.</span>
@@ -163,6 +175,17 @@ export default function UploadPage() {
                 </span>
               </li>
             </ul>
+            <div className="pt-2 border-t">
+              <p className="text-sm text-muted-foreground mb-3">
+                Need the parser tool?
+              </p>
+              <Button variant="outline" size="sm" asChild>
+                <a href="/downloads/BSSOD_Analyzer_Parser.exe" download="BSSOD_Analyzer_Parser.exe">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Parser Tool
+                </a>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
