@@ -101,15 +101,37 @@ export function FileDropzone({
     input.click();
   }, [disabled, acceptedTypes, validateAndSelectFile]);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (disabled) return;
+    
+    // Trigger file dialog on Enter or Space key
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    }
+  }, [disabled, handleClick]);
+
+  const dropzoneId = "file-dropzone";
+  const instructionsId = "file-dropzone-instructions";
+  const errorId = "file-dropzone-error";
+
   return (
     <div className="space-y-3">
       <div
+        id={dropzoneId}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-label="File upload dropzone. Drag and drop a ZIP file or click to browse."
+        aria-describedby={validationError ? `${instructionsId} ${errorId}` : instructionsId}
+        aria-disabled={disabled}
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
           "relative flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg transition-colors cursor-pointer",
+          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
           isDragging && "border-primary bg-primary/5",
           !isDragging && !validationError && "border-muted-foreground/25 hover:border-primary/50",
           validationError && "border-destructive/50 bg-destructive/5",
@@ -118,11 +140,11 @@ export function FileDropzone({
       >
         <div className="flex flex-col items-center text-center">
           {isDragging ? (
-            <FileArchive className="h-12 w-12 text-primary mb-4" />
+            <FileArchive className="h-12 w-12 text-primary mb-4" aria-hidden="true" />
           ) : validationError ? (
-            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+            <AlertCircle className="h-12 w-12 text-destructive mb-4" aria-hidden="true" />
           ) : (
-            <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+            <Upload className="h-12 w-12 text-muted-foreground mb-4" aria-hidden="true" />
           )}
           <p className="text-lg font-medium mb-1">
             {isDragging ? "Drop your file here" : "Drag and drop your ZIP file"}
@@ -130,14 +152,18 @@ export function FileDropzone({
           <p className="text-sm text-muted-foreground">
             or click to browse
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p id={instructionsId} className="text-xs text-muted-foreground mt-2">
             Accepts: {acceptedTypes.join(", ")} (max {maxSizeBytes / (1024 * 1024)} MB)
           </p>
         </div>
       </div>
       {validationError && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+        <div 
+          id={errorId}
+          role="alert"
+          className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm"
+        >
+          <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
           <span>{validationError.message}</span>
         </div>
       )}
