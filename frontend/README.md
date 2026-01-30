@@ -144,16 +144,24 @@ POST /api/v1/analyze
 
 - Button, Card, Alert, Badge
 - Progress, Separator, Tabs
-- Accordion, Collapsible
+- Accordion, Collapsible, Sheet
 
-### Custom Components
+### Results Components
 
-- `FileDropzone` - Drag-and-drop file upload
-- `ResultsHeader` - Analysis status display
-- `AnalysisSummary` - Bugcheck information
-- `AIAnalysis` - Rendered AI response
+- `FloatingChat` - Floating AI chat drawer (bottom-right)
+- `TabPanels` - Tab content components (Overview, Root Cause, Fix Steps, Prevention, Export)
+- `ExecutiveSummaryCard` - Summary with severity and confidence
+- `RootCauseCard` - Root cause analysis with technical details
+- `FixStepsList` - Prioritized fix recommendations
+- `PreventionTipsCard` - Prevention tips list
+- `SeverityBadge` - Color-coded severity indicator
+- `ConfidenceMeter` - Confidence percentage display
 - `MarkdownRenderer` - Simple markdown parser
 - `ExportActions` - Export functionality
+
+### Upload Components
+
+- `FileDropzone` - Drag-and-drop file upload
 
 ## Building for Production
 
