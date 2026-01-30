@@ -163,7 +163,7 @@ export function FileDropzone({
           role="alert"
           className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm"
         >
-          <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>{validationError.message}</span>
         </div>
       )}

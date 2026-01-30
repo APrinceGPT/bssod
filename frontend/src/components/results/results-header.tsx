@@ -34,7 +34,7 @@ export function ResultsHeader({
     <Card>
       <CardContent className="pt-6">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             {success ? (
               <CheckCircle className="h-10 w-10 text-green-500" />
             ) : (
@@ -53,12 +53,12 @@ export function ResultsHeader({
             <div className="flex flex-col gap-1">
               {dumpFile && (
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <FileText className="h-4 w-4 flex-shrink-0" />
+                  <FileText className="h-4 w-4 shrink-0" />
                   <span className="truncate">{dumpFile}</span>
                 </div>
               )}
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Clock className="h-4 w-4 flex-shrink-0" />
+                <Clock className="h-4 w-4 shrink-0" />
                 <span>Analyzed: {formatTimestamp(analysisTimestamp)}</span>
               </div>
             </div>

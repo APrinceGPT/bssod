@@ -168,7 +168,7 @@ export default function UploadPage() {
                 </Alert>
                 {friendlyError?.suggestion && (
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-muted text-sm">
-                    <Info className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                    <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <span className="text-muted-foreground">{friendlyError.suggestion}</span>
                   </div>
                 )}

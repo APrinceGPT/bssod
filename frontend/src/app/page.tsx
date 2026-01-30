@@ -121,7 +121,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="flex items-start gap-4 p-4">
-              <Shield className="h-8 w-8 text-primary flex-shrink-0" />
+              <Shield className="h-8 w-8 text-primary shrink-0" />
               <div>
                 <h3 className="font-semibold mb-1">Privacy First</h3>
                 <p className="text-sm text-muted-foreground">
@@ -132,7 +132,7 @@ export default function Home() {
             </div>
 
             <div className="flex items-start gap-4 p-4">
-              <Zap className="h-8 w-8 text-primary flex-shrink-0" />
+              <Zap className="h-8 w-8 text-primary shrink-0" />
               <div>
                 <h3 className="font-semibold mb-1">Fast Analysis</h3>
                 <p className="text-sm text-muted-foreground">
@@ -143,7 +143,7 @@ export default function Home() {
             </div>
 
             <div className="flex items-start gap-4 p-4">
-              <FileSearch className="h-8 w-8 text-primary flex-shrink-0" />
+              <FileSearch className="h-8 w-8 text-primary shrink-0" />
               <div>
                 <h3 className="font-semibold mb-1">Detailed Reports</h3>
                 <p className="text-sm text-muted-foreground">
