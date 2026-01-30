@@ -9,6 +9,14 @@ from fastapi.responses import JSONResponse
 
 from ..config import get_settings
 from ..models.schemas import AnalyzeResponse, HealthResponse
+from ..models.chat_models import (
+    StartChatRequest,
+    StartChatResponse,
+    ChatRequest,
+    ChatResponse,
+    ChatMessage,
+    MessageRole,
+)
 from ..models.error_codes import (
     ErrorResponseModel,
     no_filename_error,
@@ -20,6 +28,10 @@ from ..models.error_codes import (
 )
 from ..services.zip_validator import create_validator, ZipValidationError
 from ..services.ai_service import create_ai_service, AIServiceError, JSONParseError
+from ..services.conversation_service import (
+    get_conversation_store,
+    build_chat_system_prompt,
+)
 from ..logging_config import Loggers, log_error, log_ai_request, log_ai_response
 from ..middleware import get_request_id
 
@@ -192,3 +204,135 @@ def _get_bugcheck_name(data) -> str:
     if data.bugcheck_analysis:
         return data.bugcheck_analysis.name
     return "Unknown"
+
+
+# ============================================================================
+# Chat Endpoints
+# ============================================================================
+
+
+@router.post(
+    "/chat/start",
+    response_model=StartChatResponse,
+    summary="Start Chat Session",
+    description="Start a new chat session with crash analysis context"
+)
+async def start_chat(body: StartChatRequest):
+    """
+    Start a new chat session for follow-up questions.
+    
+    Creates a session with the crash analysis context so the AI
+    can answer follow-up questions about the analysis.
+    """
+    logger = Loggers.api()
+    request_id = get_request_id()
+    
+    logger.info(f"[{request_id}] Starting new chat session")
+    
+    store = get_conversation_store()
+    context = store.create_session(
+        bugcheck_code=body.bugcheck_code,
+        bugcheck_name=body.bugcheck_name,
+        dump_file=body.dump_file,
+        analysis_summary=body.analysis_summary,
+    )
+    
+    logger.info(
+        f"[{request_id}] Chat session created: {context.session_id} "
+        f"(bugcheck: {body.bugcheck_code})"
+    )
+    
+    return StartChatResponse(
+        success=True,
+        session_id=context.session_id,
+        message="Chat session started. You can now ask follow-up questions."
+    )
+
+
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+    responses={
+        400: {"model": ErrorResponseModel, "description": "Invalid session or request"},
+        500: {"model": ErrorResponseModel, "description": "AI service error"}
+    },
+    summary="Send Chat Message",
+    description="Send a message and get an AI response in the conversation"
+)
+async def send_chat_message(body: ChatRequest):
+    """
+    Send a message to the chat and get a response.
+    
+    The AI will use the crash analysis context to answer
+    follow-up questions about the analysis.
+    """
+    logger = Loggers.api()
+    request_id = get_request_id()
+    
+    store = get_conversation_store()
+    context = store.get_session(body.session_id)
+    
+    if context is None:
+        logger.warning(
+            f"[{request_id}] Chat session not found or expired: {body.session_id}"
+        )
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "error": "Session not found or expired",
+                "code": "CHAT_SESSION_INVALID",
+                "request_id": request_id,
+            }
+        )
+    
+    # Add user message to history
+    context.add_message(MessageRole.USER, body.message)
+    
+    # Build the message list for the AI
+    messages = [
+        {"role": msg.role.value, "content": msg.content}
+        for msg in context.messages
+    ]
+    
+    # Get the system prompt with context
+    system_prompt = build_chat_system_prompt(context)
+    
+    # Call AI service
+    ai_service = create_ai_service()
+    logger.info(
+        f"[{request_id}] Chat message in session {body.session_id}: "
+        f"{len(body.message)} chars"
+    )
+    
+    try:
+        response_content = await ai_service.chat(messages, system_prompt)
+    except AIServiceError as e:
+        log_error(logger, request_id, "CHAT_AI_ERROR", str(e))
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e),
+                "code": "CHAT_AI_ERROR",
+                "request_id": request_id,
+            }
+        )
+    
+    # Add assistant response to history
+    context.add_message(MessageRole.ASSISTANT, response_content)
+    
+    # Update the session
+    store.update_session(context)
+    
+    logger.info(
+        f"[{request_id}] Chat response sent: {len(response_content)} chars, "
+        f"{context.message_count} messages in session"
+    )
+    
+    return ChatResponse(
+        success=True,
+        session_id=context.session_id,
+        response=response_content,
+        message_count=context.message_count,
+    )

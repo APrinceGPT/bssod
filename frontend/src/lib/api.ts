@@ -4,7 +4,14 @@
  * Handles all communication with the backend API.
  */
 
-import { AnalyzeResponse, HealthResponse } from "@/types";
+import { 
+  AnalyzeResponse, 
+  HealthResponse,
+  StartChatRequest,
+  StartChatResponse,
+  ChatRequest,
+  ChatResponse
+} from "@/types";
 import { API_CONFIG } from "@/lib/constants";
 import { getUserFriendlyError, formatErrorMessage } from "@/lib/error-messages";
 
@@ -107,6 +114,68 @@ export async function analyzeFile(
     xhr.timeout = API_CONFIG.TIMEOUT_MS;
     xhr.send(formData);
   });
+}
+
+// ============================================================================
+// Chat API Functions (Phase AI-3: Interactive Chat)
+// ============================================================================
+
+/**
+ * Start a new chat session with crash analysis context
+ */
+export async function startChatSession(
+  context: StartChatRequest
+): Promise<StartChatResponse> {
+  const response = await fetch(`${API_CONFIG.BASE_URL}/api/v1/chat/start`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
+    body: JSON.stringify(context),
+  });
+
+  if (!response.ok) {
+    let errorMessage = "Failed to start chat session";
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // Ignore parse errors
+    }
+    throw new ApiError(errorMessage, response.status);
+  }
+
+  return response.json();
+}
+
+/**
+ * Send a message to the chat and get a response
+ */
+export async function sendChatMessage(
+  request: ChatRequest
+): Promise<ChatResponse> {
+  const response = await fetch(`${API_CONFIG.BASE_URL}/api/v1/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    let errorMessage = "Failed to send message";
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // Ignore parse errors
+    }
+    throw new ApiError(errorMessage, response.status);
+  }
+
+  return response.json();
 }
 
 export { ApiError };

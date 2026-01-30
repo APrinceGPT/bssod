@@ -10,6 +10,7 @@ import { useAnalysis } from "@/context/analysis-context";
 import { ResultsHeader } from "@/components/results/results-header";
 import { AnalysisSummary } from "@/components/results/analysis-summary";
 import { AIAnalysis } from "@/components/results/ai-analysis";
+import { ChatInterface } from "@/components/results/chat-interface";
 import { ExportActions } from "@/components/results/export-actions";
 
 export default function ResultsPage() {
@@ -88,6 +89,18 @@ export default function ResultsPage() {
         {/* AI Analysis */}
         {result.ai_analysis && (
           <AIAnalysis analysis={result.ai_analysis} />
+        )}
+
+        {/* Interactive Chat for Follow-up Questions */}
+        {result.ai_analysis && (
+          <ChatInterface 
+            analysisContext={{
+              bugcheck_code: result.bugcheck_code,
+              bugcheck_name: result.bugcheck_name,
+              dump_file: result.dump_file,
+              analysis_summary: result.ai_analysis.structured_analysis.executive_summary,
+            }}
+          />
         )}
 
         {/* Export Actions */}

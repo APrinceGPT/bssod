@@ -513,5 +513,167 @@ class TestSmartPrompting:
         assert "Memory" in name
 
 
+# ============================================================================
+# Chat / Conversation Tests
+# ============================================================================
+
+
+class TestChatModels:
+    """Test the chat data models."""
+    
+    def test_conversation_context_creation(self):
+        """Test creating a conversation context."""
+        from src.models.chat_models import ConversationContext, MessageRole
+        
+        context = ConversationContext(
+            session_id="test-123",
+            bugcheck_code="0x0000001A",
+            bugcheck_name="MEMORY_MANAGEMENT",
+            dump_file="MEMORY.DMP",
+            analysis_summary="Memory corruption detected"
+        )
+        
+        assert context.session_id == "test-123"
+        assert context.bugcheck_code == "0x0000001A"
+        assert context.message_count == 0
+        assert len(context.messages) == 0
+    
+    def test_conversation_add_message(self):
+        """Test adding messages to conversation."""
+        from src.models.chat_models import ConversationContext, MessageRole
+        
+        context = ConversationContext(session_id="test-456")
+        
+        # Add user message
+        context.add_message(MessageRole.USER, "What does this error mean?")
+        assert context.message_count == 1
+        assert context.messages[0].role == MessageRole.USER
+        assert context.messages[0].content == "What does this error mean?"
+        
+        # Add assistant response
+        context.add_message(MessageRole.ASSISTANT, "This error indicates...")
+        assert context.message_count == 2
+        assert context.messages[1].role == MessageRole.ASSISTANT
+    
+    def test_chat_request_validation(self):
+        """Test chat request validation."""
+        from src.models.chat_models import ChatRequest
+        from pydantic import ValidationError
+        
+        # Valid request
+        request = ChatRequest(
+            session_id="abc-123",
+            message="How do I fix this?"
+        )
+        assert request.session_id == "abc-123"
+        assert len(request.message) > 0
+        
+        # Empty message should fail
+        with pytest.raises(ValidationError):
+            ChatRequest(session_id="abc", message="")
+    
+    def test_start_chat_request(self):
+        """Test start chat request model."""
+        from src.models.chat_models import StartChatRequest
+        
+        request = StartChatRequest(
+            bugcheck_code="0x0000001A",
+            bugcheck_name="MEMORY_MANAGEMENT",
+            dump_file="MEMORY.DMP",
+            analysis_summary="Test summary"
+        )
+        
+        assert request.bugcheck_code == "0x0000001A"
+        assert request.dump_file == "MEMORY.DMP"
+
+
+class TestConversationService:
+    """Test the conversation service."""
+    
+    def test_conversation_store_create_session(self):
+        """Test creating a session in the store."""
+        from src.services.conversation_service import ConversationStore
+        
+        store = ConversationStore()
+        context = store.create_session(
+            bugcheck_code="0x0A",
+            bugcheck_name="IRQL_NOT_LESS_OR_EQUAL"
+        )
+        
+        assert context.session_id is not None
+        assert len(context.session_id) > 10  # UUID
+        assert context.bugcheck_code == "0x0A"
+        assert store.session_count == 1
+    
+    def test_conversation_store_get_session(self):
+        """Test retrieving a session from the store."""
+        from src.services.conversation_service import ConversationStore
+        
+        store = ConversationStore()
+        created = store.create_session(bugcheck_code="0x1A")
+        
+        # Retrieve existing
+        retrieved = store.get_session(created.session_id)
+        assert retrieved is not None
+        assert retrieved.session_id == created.session_id
+        
+        # Non-existent
+        missing = store.get_session("fake-session-id")
+        assert missing is None
+    
+    def test_conversation_store_update_session(self):
+        """Test updating a session in the store."""
+        from src.services.conversation_service import ConversationStore
+        from src.models.chat_models import MessageRole
+        
+        store = ConversationStore()
+        context = store.create_session()
+        
+        # Modify context
+        context.add_message(MessageRole.USER, "Test message")
+        store.update_session(context)
+        
+        # Retrieve and check
+        retrieved = store.get_session(context.session_id)
+        assert retrieved.message_count == 1
+    
+    def test_conversation_store_delete_session(self):
+        """Test deleting a session."""
+        from src.services.conversation_service import ConversationStore
+        
+        store = ConversationStore()
+        context = store.create_session()
+        
+        assert store.session_count == 1
+        result = store.delete_session(context.session_id)
+        assert result is True
+        assert store.session_count == 0
+        
+        # Delete non-existent
+        result = store.delete_session("fake-id")
+        assert result is False
+    
+    def test_build_chat_system_prompt(self):
+        """Test building the chat system prompt."""
+        from src.services.conversation_service import build_chat_system_prompt
+        from src.models.chat_models import ConversationContext
+        
+        context = ConversationContext(
+            session_id="test",
+            bugcheck_code="0x0000001A",
+            bugcheck_name="MEMORY_MANAGEMENT",
+            dump_file="MEMORY.DMP",
+            analysis_summary="Memory corruption was detected"
+        )
+        
+        prompt = build_chat_system_prompt(context)
+        
+        assert "0x0000001A" in prompt
+        assert "MEMORY_MANAGEMENT" in prompt
+        assert "MEMORY.DMP" in prompt
+        assert "Memory corruption" in prompt
+        assert "follow-up questions" in prompt.lower()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

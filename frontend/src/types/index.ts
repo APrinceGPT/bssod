@@ -242,3 +242,68 @@ export interface AnalysisState {
   result?: AnalyzeResponse;
   error?: string;
 }
+
+// ============================================================================
+// Chat Types (Phase AI-3: Interactive Chat)
+// ============================================================================
+
+/**
+ * Role of the message sender.
+ */
+export type MessageRole = "user" | "assistant" | "system";
+
+/**
+ * A single message in the conversation.
+ */
+export interface ChatMessage {
+  role: MessageRole;
+  content: string;
+  timestamp?: string;
+}
+
+/**
+ * Request to start a new chat session.
+ */
+export interface StartChatRequest {
+  bugcheck_code?: string;
+  bugcheck_name?: string;
+  dump_file?: string;
+  analysis_summary?: string;
+}
+
+/**
+ * Response when starting a new chat session.
+ */
+export interface StartChatResponse {
+  success: boolean;
+  session_id: string;
+  message: string;
+}
+
+/**
+ * Request to send a chat message.
+ */
+export interface ChatRequest {
+  session_id: string;
+  message: string;
+}
+
+/**
+ * Response from the chat endpoint.
+ */
+export interface ChatResponse {
+  success: boolean;
+  session_id: string;
+  response: string;
+  message_count: number;
+}
+
+/**
+ * Chat session state for the frontend.
+ */
+export interface ChatState {
+  sessionId: string | null;
+  messages: ChatMessage[];
+  isLoading: boolean;
+  error: string | null;
+}

@@ -18,6 +18,7 @@ BSSOD Analyzer is a complete solution for diagnosing Windows crashes:
 - **Root Cause Analysis** - Detailed breakdown with affected component identification
 - **Prioritized Fix Steps** - Numbered recommendations with priority levels
 - **Prevention Tips** - Actionable advice to prevent future crashes
+- **Interactive Chat** - Ask follow-up questions about the analysis
 
 ## 📦 Project Structure
 
@@ -77,6 +78,8 @@ API endpoints:
 - `GET /` - API info
 - `GET /api/v1/health` - Health check
 - `POST /api/v1/analyze` - Upload ZIP for AI analysis
+- `POST /api/v1/chat/start` - Start interactive chat session
+- `POST /api/v1/chat` - Send follow-up question
 
 ### Frontend Website (Phase 3)
 
@@ -119,7 +122,7 @@ MAX_UPLOAD_SIZE_MB=50
 | 3 | Frontend | ✅ Complete | Next.js website with shadcn/ui |
 | 4 | Integration | ✅ Complete | Full system integration |
 | 5 | Enhancements | ✅ Complete | UX/DX improvements |
-| 6 | AI Intelligence | 🔄 In Progress | Advanced AI capabilities |
+| 6 | AI Intelligence | ✅ Complete | Advanced AI capabilities |
 
 ### Enhancement Progress
 
@@ -136,7 +139,7 @@ MAX_UPLOAD_SIZE_MB=50
 |-------|------------|--------|
 | AI-1 | Structured Intelligence | ✅ Complete |
 | AI-2 | Smart Prompting | ✅ Complete |
-| AI-3 | Interactive Chat | 🔲 Planned |
+| AI-3 | Interactive Chat | ✅ Complete |
 
 See [Enhancement Assessment](docs/enhancement_assessment.md) and [AI Enhancement Assessment](docs/ai_enhancement_assessment.md) for details.
 

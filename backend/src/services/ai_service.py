@@ -204,6 +204,82 @@ class AIService:
         except Exception:
             return response.text[:500]
     
+    async def chat(
+        self,
+        messages: list[dict],
+        system_prompt: str
+    ) -> str:
+        """
+        Send a chat conversation to the AI and get a response.
+        
+        Args:
+            messages: List of message dicts with 'role' and 'content'
+            system_prompt: System prompt with context
+        
+        Returns:
+            AI response content as string
+        
+        Raises:
+            AIServiceError: If the API call fails
+        """
+        # Build the full message list with system prompt
+        full_messages = [{"role": "system", "content": system_prompt}]
+        full_messages.extend(messages)
+        
+        request_body = {
+            "model": self.model,
+            "messages": full_messages,
+            "max_tokens": 2048,  # Shorter for chat responses
+            "temperature": 0.5  # Slightly higher for conversational tone
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    json=request_body,
+                    headers=headers
+                )
+                
+                if response.status_code != 200:
+                    error_detail = self._parse_error(response)
+                    raise AIServiceError(
+                        f"AI API returned status {response.status_code}: {error_detail}"
+                    )
+                
+                result = response.json()
+                return self._extract_chat_response(result)
+                
+        except httpx.TimeoutException:
+            raise AIServiceError(
+                f"AI API request timed out after {self.timeout} seconds"
+            )
+        except httpx.RequestError as e:
+            raise AIServiceError(f"Failed to connect to AI API: {e}")
+    
+    def _extract_chat_response(self, result: dict) -> str:
+        """Extract the response content from a chat API response."""
+        try:
+            choices = result.get("choices", [])
+            if not choices:
+                raise AIServiceError("No response choices returned from AI API")
+            
+            message = choices[0].get("message", {})
+            content = message.get("content", "")
+            
+            if not content:
+                raise AIServiceError("Empty response content from AI API")
+            
+            return content
+            
+        except KeyError as e:
+            raise AIServiceError(f"Unexpected API response format: missing {e}")
+
     async def health_check(self) -> bool:
         """
         Check if the AI service is reachable.
