@@ -138,22 +138,6 @@ export interface Metadata {
 }
 
 // ============================================================================
-// API Response Types
-// ============================================================================
-
-/**
- * Legacy AI analysis result (raw text)
- * @deprecated Use StructuredAIAnalysisResult instead
- */
-export interface AIAnalysisResult {
-  analysis: string;
-  model?: string;
-  tokens_used?: number;
-  prompt_tokens?: number;
-  completion_tokens?: number;
-}
-
-// ============================================================================
 // Structured AI Analysis Types (Phase AI-1)
 // ============================================================================
 

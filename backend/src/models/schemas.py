@@ -156,17 +156,8 @@ class AnalysisDataModel(BaseModel):
 # API Response Models
 # ============================================================================
 
-class AIAnalysisResult(BaseModel):
-    """AI analysis result - raw text from Claude (legacy, kept for reference)."""
-    analysis: str = Field(..., description="Full AI analysis text")
-    model: Optional[str] = Field(None, description="Model used for analysis")
-    tokens_used: Optional[int] = Field(None, description="Total tokens used")
-    prompt_tokens: Optional[int] = Field(None, description="Prompt tokens used")
-    completion_tokens: Optional[int] = Field(None, description="Completion tokens used")
-
-
-# Import structured analysis models for the new response
-from .structured_analysis import StructuredAIAnalysisResult, StructuredAnalysis
+# Import structured analysis models for the response
+from .structured_analysis import StructuredAIAnalysisResult
 
 
 class AnalyzeResponse(BaseModel):

@@ -28,7 +28,7 @@ export function AnalysisSummary({ bugcheckCode, bugcheckName }: AnalysisSummaryP
         <div className="grid gap-3">
           {bugcheckCode && (
             <div className="flex items-start gap-3">
-              <span className="font-medium text-muted-foreground min-w-[100px]">
+              <span className="font-medium text-muted-foreground min-w-25">
                 Bugcheck Code:
               </span>
               <code className="font-mono text-sm bg-muted px-2 py-1 rounded">
@@ -38,7 +38,7 @@ export function AnalysisSummary({ bugcheckCode, bugcheckName }: AnalysisSummaryP
           )}
           {bugcheckName && (
             <div className="flex items-start gap-3">
-              <span className="font-medium text-muted-foreground min-w-[100px]">
+              <span className="font-medium text-muted-foreground min-w-25">
                 Error Name:
               </span>
               <span className="font-medium">{bugcheckName}</span>

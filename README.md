@@ -205,6 +205,19 @@ npm run build
 - **Symbol resolution**: Full stack traces require PDB debug symbols
 - **Live dumps**: Some fields may be empty as system was still running
 
+## 🔮 Future Enhancements
+
+### Reserved UI Components (shadcn/ui)
+The following UI components are installed but reserved for future features:
+- `accordion.tsx` - For expandable FAQ or detailed sections
+- `collapsible.tsx` - For collapsible content areas
+- `separator.tsx` - For visual content separation
+
+### Production Improvements
+When moving to production deployment:
+- **Error Reporting**: Replace `console.error` in `frontend/src/lib/error-messages.ts` with proper error monitoring (e.g., Sentry, LogRocket)
+- **Session Storage**: Replace in-memory chat session storage with Redis for multi-instance deployment
+
 ## 🤝 Contributing
 
 Please ensure:

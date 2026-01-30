@@ -9,11 +9,7 @@ import uuid
 from typing import Optional, Dict
 from datetime import datetime, timedelta
 
-from ..models.chat_models import (
-    ConversationContext,
-    MessageRole,
-    ChatMessage,
-)
+from ..models.chat_models import ConversationContext
 
 
 class ConversationStore:

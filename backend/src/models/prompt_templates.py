@@ -5,7 +5,7 @@ Provides category-specific system prompts and analysis guidance for AI.
 Extends the base system prompt with specialized focus areas.
 """
 
-from .bugcheck_categories import BugcheckCategory, CategoryConfig, get_category_config
+from .bugcheck_categories import BugcheckCategory, get_category_config
 
 
 # Base JSON structure requirement (shared across all categories)

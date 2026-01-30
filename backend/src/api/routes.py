@@ -14,7 +14,6 @@ from ..models.chat_models import (
     StartChatResponse,
     ChatRequest,
     ChatResponse,
-    ChatMessage,
     MessageRole,
 )
 from ..models.error_codes import (

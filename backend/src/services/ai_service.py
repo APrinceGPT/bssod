@@ -9,11 +9,10 @@ import re
 import httpx
 
 from ..config import get_settings
-from ..models.schemas import AnalysisDataModel, AIAnalysisResult
+from ..models.schemas import AnalysisDataModel
 from ..models.structured_analysis import (
     StructuredAnalysis,
     StructuredAIAnalysisResult,
-    AIAnalysisError as StructuredAIError
 )
 from .prompt_engineering import format_analysis_prompt, get_system_prompt
 
