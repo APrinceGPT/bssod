@@ -16,6 +16,7 @@ from pathlib import Path
 APP_NAME = "BSSOD_Analyzer_Parser"
 MAIN_SCRIPT = "gui_app.py"
 ICON_FILE = None  # Set to path of .ico file if available
+MANIFEST_FILE = "app.manifest"  # UAC elevation manifest
 ONE_FILE = True   # Create single executable
 CONSOLE = False   # Hide console window
 
@@ -59,6 +60,11 @@ def build_executable():
     
     if ICON_FILE and os.path.exists(ICON_FILE):
         cmd.extend(['--icon', ICON_FILE])
+    
+    # Add UAC manifest for admin elevation (required for C:\Windows access)
+    if os.path.exists(MANIFEST_FILE):
+        cmd.extend(['--manifest', MANIFEST_FILE])
+        print(f"Using manifest: {MANIFEST_FILE} (requires Administrator)")
     
     # Add data files (include src directory)
     cmd.extend(['--add-data', 'src;src'])
