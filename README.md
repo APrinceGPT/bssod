@@ -1,57 +1,102 @@
-# BSSOD - Blue-Screen Solution Oriented Diagnostics
+<p align="center">
+  <img src="https://img.shields.io/badge/Windows-BSOD%20Analyzer-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows BSOD Analyzer"/>
+</p>
 
-An AI-powered Windows crash dump analyzer that helps users understand and fix Blue Screen of Death (BSOD) errors.
+<h1 align="center">🔵 BSSOD</h1>
+<h3 align="center">Blue-Screen Solution Oriented Diagnostics</h3>
 
-## 🎯 Overview
+<p align="center">
+  <strong>AI-powered Windows crash dump analyzer that transforms cryptic Blue Screen errors into actionable solutions</strong>
+</p>
 
-BSSOD Analyzer is a complete solution for diagnosing Windows crashes:
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js&logoColor=white" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI"/>
+  <img src="https://img.shields.io/badge/Claude-4%20Sonnet-CC785C?style=flat-square&logo=anthropic&logoColor=white" alt="Claude 4"/>
+  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"/>
+</p>
 
-1. **Parser Tool** (Desktop) - Extracts diagnostic data locally from memory dump files
-2. **Backend API** (FastAPI) - Processes uploads and integrates with AI
-3. **Website** (Next.js) - Modern web interface with **structured AI analysis**
+<p align="center">
+  <a href="#-key-features">Features</a> •
+  <a href="#-how-it-works">How It Works</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-api-reference">API</a> •
+  <a href="#-privacy">Privacy</a>
+</p>
 
-### ✨ AI-Powered Features
+---
 
-- **Severity Classification** - Crashes rated critical/high/medium/low with color-coded badges
-- **Confidence Scoring** - AI indicates certainty level (0-100%) with visual meter
-- **Executive Summaries** - Non-technical 1-2 sentence explanations
-- **Root Cause Analysis** - Detailed breakdown with affected component identification
-- **Prioritized Fix Steps** - Numbered recommendations with priority levels
-- **Prevention Tips** - Actionable advice to prevent future crashes
-- **Interactive Chat** - Ask follow-up questions about the analysis
+## 🎯 What is BSSOD?
 
-## 📦 Project Structure
+**BSSOD** (Blue-Screen Solution Oriented Diagnostics) is a complete solution for diagnosing Windows Blue Screen of Death (BSOD) crashes. It combines **local memory dump parsing** with **AI-powered analysis** to help users understand what caused their system crash and how to fix it.
+
+Unlike generic troubleshooting guides, BSSOD analyzes your specific crash dump and provides **personalized, prioritized solutions** based on the exact error codes, faulting drivers, and system context.
+
+---
+
+## ✨ Key Features
+
+### 🤖 AI-Powered Analysis
+| Feature | Description |
+|---------|-------------|
+| **Severity Classification** | Crashes rated as Critical/High/Medium/Low with color-coded badges |
+| **Confidence Scoring** | AI indicates certainty level (0-100%) for its diagnosis |
+| **Executive Summary** | Non-technical 1-2 sentence explanation anyone can understand |
+| **Root Cause Analysis** | Detailed breakdown identifying the affected component |
+| **Prioritized Fix Steps** | Numbered recommendations with priority levels |
+| **Prevention Tips** | Actionable advice to prevent future crashes |
+| **Interactive Chat** | Ask follow-up questions about the analysis |
+
+### 🔒 Privacy-First Design
+- All dump parsing happens **locally on your machine**
+- Only extracted diagnostic data is uploaded (never raw dump files)
+- No personal files, passwords, or browsing history extracted
+- Technical crash data only: bugcheck codes, driver info, stack traces
+
+### 📊 Comprehensive Dump Support
+| Dump Type | Supported |
+|-----------|-----------|
+| Full Memory Dump | ✅ |
+| Kernel Memory Dump | ✅ |
+| Automatic Memory Dump | ✅ |
+| Small Memory Dump (Minidump) | ✅ |
+| Live Kernel Dump | ✅ |
+
+---
+
+## 🔄 How It Works
 
 ```
-MemoryDumper/
-├── parser-tool/        # Phase 1: Desktop parser application
-│   ├── gui_app.py      # GUI application
-│   ├── src/parser/     # Core parsing modules
-│   └── dist/           # Standalone executable
-├── backend/            # Phase 2: FastAPI backend API
-│   ├── src/
-│   │   ├── api/        # API routes
-│   │   ├── models/     # Pydantic schemas
-│   │   ├── services/   # Business logic
-│   │   ├── config.py   # Configuration
-│   │   └── main.py     # FastAPI app
-│   └── tests/          # Backend tests
-├── frontend/           # Phase 3: Next.js website
-│   ├── src/
-│   │   ├── app/        # Next.js App Router pages
-│   │   ├── components/ # React components
-│   │   ├── context/    # React context
-│   │   ├── lib/        # API service layer
-│   │   └── types/      # TypeScript definitions
-│   └── package.json
-├── docs/               # Project documentation
-│   └── feasibility_study.md
-└── .env                # Environment configuration
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Memory Dump    │────▶│  Parser Tool    │────▶│   ZIP Archive   │
+│  (.DMP file)    │     │  (Local Parse)  │     │  (Safe data)    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                                                        │
+                                                        ▼
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   AI Analysis   │◀────│  Backend API    │◀────│   Web Upload    │
+│  (Claude 4)     │     │   (FastAPI)     │     │   (Next.js)     │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Structured Analysis Results                   │
+│  • Severity & Confidence  • Root Cause  • Fix Steps  • Chat    │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+1. **Parse Locally**: Run the Parser Tool on your Windows machine to extract diagnostic data from the memory dump
+2. **Upload Safely**: Upload the generated ZIP file (contains only crash metadata, not personal data)
+3. **AI Analyzes**: Claude 4 Sonnet analyzes the crash context with specialized prompts
+4. **Get Solutions**: Receive prioritized, actionable fix steps with confidence ratings
+
+---
 
 ## 🚀 Quick Start
 
-### Parser Tool (Phase 1)
+### Option 1: Use the Parser Tool (Recommended)
 
 Download and run the standalone executable - no installation required:
 
@@ -59,41 +104,137 @@ Download and run the standalone executable - no installation required:
 parser-tool/dist/BSSOD_Analyzer_Parser.exe
 ```
 
-Or run from source:
-```bash
-cd parser-tool
-pip install -r requirements.txt
-python gui_app.py
-```
+### Option 2: Run the Full Stack
 
-### Backend API (Phase 2)
-
+**1. Start the Backend**
 ```bash
 cd backend
 pip install -r requirements.txt
 python -m uvicorn src.main:app --host 127.0.0.1 --port 8080
 ```
 
-API endpoints:
-- `GET /` - API info
-- `GET /api/v1/health` - Health check
-- `POST /api/v1/analyze` - Upload ZIP for AI analysis
-- `POST /api/v1/chat/start` - Start interactive chat session
-- `POST /api/v1/chat` - Send follow-up question
-
-### Frontend Website (Phase 3)
-
+**2. Start the Frontend**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser.
+**3. Open the App**
+Navigate to http://localhost:3000
 
-## 🔧 Configuration
+---
 
-Create a `.env` file in the root directory:
+## 🏗️ Architecture
+
+BSSOD follows a **three-tier architecture** with clear separation of concerns:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                         PRESENTATION LAYER                          │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │  Next.js 16 Frontend                                          │  │
+│  │  • React 19 with App Router                                   │  │
+│  │  • TypeScript strict mode                                     │  │
+│  │  • Tailwind CSS v4 + shadcn/ui                               │  │
+│  │  • Responsive design with dark mode                           │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌────────────────────────────────────────────────────────────────────┐
+│                          SERVICE LAYER                              │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │  FastAPI Backend                                              │  │
+│  │  • RESTful API with OpenAPI docs                             │  │
+│  │  • Pydantic v2 validation                                     │  │
+│  │  • Async request handling                                     │  │
+│  │  • Structured error responses                                 │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │  AI Service                                                   │  │
+│  │  • Claude 4 Sonnet integration                               │  │
+│  │  • Context-aware prompting                                    │  │
+│  │  • Conversation memory                                        │  │
+│  │  • Structured JSON output                                     │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌────────────────────────────────────────────────────────────────────┐
+│                           DATA LAYER                                │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │  Parser Tool (Desktop)                                        │  │
+│  │  • Windows kernel dump parsing (kdmp-parser)                  │  │
+│  │  • PE header analysis                                         │  │
+│  │  • Driver enumeration                                         │  │
+│  │  • Bugcheck code extraction                                   │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### Component Breakdown
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Parser Tool** | Python + PyQt6 | Local memory dump parsing with GUI |
+| **Backend API** | FastAPI + Python 3.11+ | REST API, AI orchestration, file handling |
+| **Frontend** | Next.js 16 + React 19 | Modern web UI with real-time updates |
+| **AI Engine** | Claude 4 Sonnet | Crash analysis, solution generation, chat |
+
+---
+
+## 📡 API Reference
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | API information and version |
+| `GET` | `/api/v1/health` | Health check with AI status |
+| `POST` | `/api/v1/analyze` | Upload ZIP for AI analysis |
+| `POST` | `/api/v1/chat/start` | Start interactive chat session |
+| `POST` | `/api/v1/chat` | Send follow-up question |
+
+### Analysis Response Schema
+
+```typescript
+interface AnalysisResponse {
+  success: boolean;
+  bugcheck_code: string;      // e.g., "0x0000007E"
+  bugcheck_name: string;      // e.g., "SYSTEM_THREAD_EXCEPTION_NOT_HANDLED"
+  dump_file: string;          // Original filename
+  
+  analysis: {
+    severity: "critical" | "high" | "medium" | "low";
+    confidence: number;       // 0-100
+    executive_summary: string;
+    
+    root_cause: {
+      summary: string;
+      affected_component: string;
+      technical_details: string;
+    };
+    
+    fix_steps: Array<{
+      step_number: number;
+      title: string;
+      description: string;
+      priority: "critical" | "high" | "medium" | "low";
+      technical_level: "beginner" | "intermediate" | "advanced";
+    }>;
+    
+    prevention_tips: string[];
+    additional_notes: string | null;
+  };
+}
+```
+
+---
+
+## ⚙️ Configuration
+
+Create a `.env` file in the project root:
 
 ```env
 # AI Configuration
@@ -113,130 +254,51 @@ CORS_ORIGINS=http://localhost:3000
 MAX_UPLOAD_SIZE_MB=50
 ```
 
-## 📋 Development Progress
+---
 
-| Phase | Component | Status | Description |
-|-------|-----------|--------|-------------|
-| 1 | Parser Tool | ✅ Complete | Desktop app for local dump parsing |
-| 2 | Backend API | ✅ Complete | FastAPI with AI integration |
-| 3 | Frontend | ✅ Complete | Next.js website with shadcn/ui |
-| 4 | Integration | ✅ Complete | Full system integration |
-| 5 | Enhancements | ✅ Complete | UX/DX improvements |
-| 6 | AI Intelligence | ✅ Complete | Advanced AI capabilities |
+## 🔒 Privacy
 
-### Enhancement Progress
+BSSOD is designed with privacy as a core principle:
 
-| Phase | Focus Area | Status |
-|-------|------------|--------|
-| Phase 1 | Critical UX Fixes | ✅ Complete |
-| Phase 2 | Backend Robustness | ✅ Complete |
-| Phase 3 | Polish & Accessibility | ✅ Complete |
-| Phase 4 | Quality & Testing | ✅ Complete |
+| What's Collected | What's NOT Collected |
+|------------------|---------------------|
+| Bugcheck codes | Raw memory dump content |
+| Driver names and versions | Personal files |
+| Stack trace addresses | Passwords or credentials |
+| System timestamp | Browser history |
+| Processor context | User documents |
 
-### AI Enhancement Progress
+The Parser Tool runs **entirely locally** and only extracts technical crash metadata. The ZIP file uploaded to the analysis service contains no personal information.
 
-| Phase | Focus Area | Status |
-|-------|------------|--------|
-| AI-1 | Structured Intelligence | ✅ Complete |
-| AI-2 | Smart Prompting | ✅ Complete |
-| AI-3 | Interactive Chat | ✅ Complete |
-
-See [Enhancement Assessment](docs/enhancement_assessment.md) and [AI Enhancement Assessment](docs/ai_enhancement_assessment.md) for details.
-
-## 🚀 Running the Full Stack
-
-### 1. Start the Backend
-```bash
-cd backend
-pip install -r requirements.txt
-python -m uvicorn src.main:app --host 127.0.0.1 --port 8080
-```
-
-### 2. Start the Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 3. Open the App
-Navigate to http://localhost:3000 in your browser.
-
-## 🧪 Running Tests
-
-### Parser Tool Tests
-```bash
-cd parser-tool
-python test_kdmp.py
-```
-
-### Backend Tests
-```bash
-cd backend
-python -m pytest tests/ -v
-```
-
-### Frontend Build Test
-```bash
-cd frontend
-npm run build
-```
-
-## 🔒 Privacy First
-
-- All dump parsing happens **locally** on your machine
-- Only extracted diagnostic data is uploaded (never the raw dump file)
-- No personal files, passwords, or browsing history is extracted
-- Technical crash data only: bugcheck codes, driver info, stack traces
-
-## 📊 Supported Dump Types
-
-| Type | Support |
-|------|---------|
-| Full Memory Dump | ✅ |
-| Kernel Memory Dump | ✅ |
-| Automatic Memory Dump | ✅ |
-| Small Memory Dump (Minidump) | ✅ |
-| Live Kernel Dump | ✅ |
+---
 
 ## ⚠️ Known Limitations
 
-- **Driver enumeration**: Full driver list requires virtual address translation; basic detection provided
-- **Symbol resolution**: Full stack traces require PDB debug symbols
-- **Live dumps**: Some fields may be empty as system was still running
+| Limitation | Details |
+|------------|---------|
+| **Driver Enumeration** | Full driver list requires virtual address translation; basic detection provided |
+| **Symbol Resolution** | Full stack traces require PDB debug symbols |
+| **Live Dumps** | Some fields may be empty as system was still running |
 
-## 🔮 Future Enhancements
-
-### Reserved UI Components (shadcn/ui)
-The following UI components are installed but reserved for future features:
-- `accordion.tsx` - For expandable FAQ or detailed sections
-- `collapsible.tsx` - For collapsible content areas
-- `separator.tsx` - For visual content separation
-
-### Production Improvements
-When moving to production deployment:
-- **Error Reporting**: Replace `console.error` in `frontend/src/lib/error-messages.ts` with proper error monitoring (e.g., Sentry, LogRocket)
-- **Session Storage**: Replace in-memory chat session storage with Redis for multi-instance deployment
-
-## 🤝 Contributing
-
-Please ensure:
-- All tests pass before submitting
-- Code follows modular structure (max 500 lines per file)
-- No unused imports or dead code
-- No graceful degradation - report limitations explicitly
+---
 
 ## 📄 License
 
-BSSOD - Blue-Screen Solution Oriented Diagnostics Project
+BSSOD - Blue-Screen Solution Oriented Diagnostics
 
 ---
 
 ## 📚 Documentation
 
-- [Feasibility Study](docs/BSSOD_Feasibility_Study.md)
-- [Enhancement Assessment](docs/enhancement_assessment.md)
-- [AI Enhancement Assessment](docs/ai_enhancement_assessment.md)
-- [Parser Tool README](parser-tool/README.md)
-- [Backend README](backend/README.md)
-- [Frontend README](frontend/README.md)
+| Document | Description |
+|----------|-------------|
+| [Development Progress](DEVELOPMENT.md) | Phase tracking and development notes |
+| [Feasibility Study](docs/BSSOD_Feasibility_Study.md) | Initial research and technical planning |
+| [Enhancement Assessment](docs/enhancement_assessment.md) | UX/DX improvement details |
+| [AI Enhancement Assessment](docs/ai_enhancement_assessment.md) | AI capability breakdown |
+
+---
+
+<p align="center">
+  <sub>Built with ❤️ for Windows crash debugging</sub>
+</p>
